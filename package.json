@@ -19,9 +19,18 @@
       "output": "dist"
     },
     "files": [
-      "**/*",
-      "!dist",
-      "!node_modules/.cache"
+      "main.js",
+      "preload.js",
+      "renderer.js",
+      "renderer.html",
+      "package.json",
+      "!node_modules/**/*",
+      "node_modules/@ffmpeg-installer/**/*",
+      "node_modules/@ffprobe-installer/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/@ffmpeg-installer/**/*",
+      "node_modules/@ffprobe-installer/**/*"
     ],
     "extraResources": [
       {
