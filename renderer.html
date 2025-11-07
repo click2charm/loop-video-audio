@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Loop Video to Audio</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
+    pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; }
+    button, input, select, label { font-size: 14px; }
+    button { margin-right: 8px; margin-bottom: 8px; }
+    .row { margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Loop Video to Audio</h1>
+
+  <div>
+    <button id="btnVideo">เลือกวิดีโอ</button>
+    <button id="btnAudios">เลือกไฟล์เสียง (หลายไฟล์ได้)</button>
+    <button id="btnOut">เลือกไฟล์ผลลัพธ์</button>
+    <button id="btnRun">เริ่มรวม</button>
+  </div>
+
+  <div style="margin:14px 0;border-top:1px solid #ddd;padding-top:12px;">
+    <h3>Overlay Options</h3>
+
+    <div class="row">
+      <input id="centerMode" type="checkbox">
+      <label for="centerMode"><b>จัดข้อความ “กึ่งกลางจอ” อัตโนมัติ</b></label>
+    </div>
+
+    <div class="row">
+      <label>หัวเรื่อง (ใหญ่):</label>
+      <input id="titleText" placeholder="เช่น MELODIA" style="width:60%;">
+      <label style="margin-left:8px;">ขนาด:</label>
+      <input id="titleSize" type="number" value="64" style="width:80px;">
+    </div>
+
+    <div class="row">
+      <label>รองหัวเรื่อง:</label>
+      <input id="subtitleText" placeholder="เช่น รวมเพลงสากลเพราะ ๆ ..." style="width:60%;">
+      <label style="margin-left:8px;">ขนาด:</label>
+      <input id="subtitleSize" type="number" value="48" style="width:80px;">
+    </div>
+
+    <div class="row">
+      <label>แท็กไลน์:</label>
+      <input id="taglineText" placeholder="เช่น เพลิดเพลินและผ่อนคลายไปกับ..." style="width:60%;">
+      <label style="margin-left:8px;">ขนาด:</label>
+      <input id="taglineSize" type="number" value="36" style="width:80px;">
+    </div>
+
+    <div class="row">
+      <label>ข้อความเดี่ยว (โหมดปกติ):</label>
+      <input id="txtOverlay" placeholder="จะไม่ใช้เมื่อเปิดโหมดจัดกลาง" style="width:60%;">
+      <label style="margin-left:8px;">ตำแหน่ง:</label>
+      <select id="textPos">
+        <option value="br">ขวาล่าง</option>
+        <option value="tr">ขวาบน</option>
+        <option value="bl">ซ้ายล่าง</option>
+        <option value="tl">ซ้ายบน</option>
+      </select>
+      <label style="margin-left:8px;">ขนาด:</label>
+      <input id="fontSize" type="number" value="48" style="width:80px;">
+    </div>
+
+    <div class="row">
+      <button id="btnPickLogo">เลือกโลโก้ (PNG/JPG)</button>
+      <span id="logoSel" style="margin-left:8px;color:#666;"></span>
+      <label style="margin-left:12px;">สเกลโลโก้ (0–1):</label>
+      <input id="logoScale" type="number" step="0.1" value="0.3" style="width:80px;">
+      <label style="margin-left:8px;">ทึบ (0–1):</label>
+      <input id="logoOpacity" type="number" step="0.1" value="0.9" style="width:80px;">
+      <label style="margin-left:8px;">มุม/ตำแหน่ง:</label>
+      <select id="logoPos">
+        <option value="br">ขวาล่าง</option>
+        <option value="tr">ขวาบน</option>
+        <option value="bl">ซ้ายล่าง</option>
+        <option value="tl">ซ้ายบน</option>
+        <option value="center-before-title">กลางจอ ก่อนหัวเรื่อง</option>
+        <option value="center-after-tagline">กลางจอ หลังแท็กไลน์</option>
+      </select>
+    </div>
+  </div>
+
+  <h3>สถานะไฟล์ที่เลือก</h3>
+  <pre id="sel"></pre>
+
+  <h3>Log</h3>
+  <pre id="log" style="height:260px; overflow:auto;"></pre>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

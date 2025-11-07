@@ -1,0 +1,65 @@
+name: Build Electron App (macOS + Windows)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   # กด run เองได้จากหน้า Actions
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest ]
+        arch: [ x64 ]
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fix Python on macOS
+        if: runner.os == 'macOS'
+        run: |
+          PY3=$(which python3)
+          sudo ln -sf "$PY3" /usr/local/bin/python || true
+          which python || true
+
+      - name: Build app
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            npm run dist:mac
+          else
+            npm run dist:win
+          fi
+
+      - name: Upload built artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }}-build
+          path: dist/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: "Loop Video to Audio v1.0.${{ github.run_number }}"
+          files: dist-artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

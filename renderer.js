@@ -1,0 +1,64 @@
+let videoPath=null, audioFiles=[], outputPath=null, logoPath=null;
+
+const sel = document.getElementById('sel');
+const log = document.getElementById('log');
+const logoSel = document.getElementById('logoSel');
+
+function renderSel(){
+  sel.textContent = JSON.stringify({ videoPath, audioFiles, outputPath, logoPath }, null, 2);
+}
+function appendLog(line){
+  log.textContent += line + '\n';
+  log.scrollTop = log.scrollHeight;
+}
+
+document.getElementById('btnVideo').onclick = async ()=>{
+  videoPath = await window.api.pickVideo();
+  renderSel();
+};
+document.getElementById('btnAudios').onclick = async ()=>{
+  audioFiles = await window.api.pickAudios();
+  renderSel();
+};
+document.getElementById('btnOut').onclick = async ()=>{
+  outputPath = await window.api.pickOutput();
+  renderSel();
+};
+document.getElementById('btnPickLogo').onclick = async ()=>{
+  logoPath = await window.api.pickLogo();
+  logoSel.textContent = logoPath || '';
+  renderSel();
+};
+
+document.getElementById('btnRun').onclick = async ()=>{
+  if(!videoPath || !outputPath || !audioFiles.length){
+    appendLog('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ, เสียง, ผลลัพธ์)');
+    return;
+  }
+  const payload = {
+    videoPath,
+    audioFiles,
+    outputPath,
+    centerMode: document.getElementById('centerMode').checked,
+    titleText: document.getElementById('titleText').value || '',
+    titleSize: Number(document.getElementById('titleSize').value) || 64,
+    subtitleText: document.getElementById('subtitleText').value || '',
+    subtitleSize: Number(document.getElementById('subtitleSize').value) || 48,
+    taglineText: document.getElementById('taglineText').value || '',
+    taglineSize: Number(document.getElementById('taglineSize').value) || 36,
+    overlayText: document.getElementById('txtOverlay').value || '',
+    textPos: document.getElementById('textPos').value,
+    fontSize: Number(document.getElementById('fontSize').value) || 48,
+    logoPath: logoPath || '',
+    logoScale: Number(document.getElementById('logoScale').value) || 0.3,
+    logoOpacity: Number(document.getElementById('logoOpacity').value) || 0.9,
+    logoPos: document.getElementById('logoPos').value
+  };
+
+  appendLog('เริ่มประมวลผล...');
+  const res = await window.api.mergeAndLoop(payload);
+  if(res.ok) appendLog('สำเร็จ ✅');
+  else appendLog('ผิดพลาด ❌ ' + res.error);
+};
+
+window.api.onFfmpegLog(appendLog);
