@@ -24,25 +24,23 @@
       "renderer.js",
       "renderer.html",
       "package.json",
-      "!**/*.{md,ts,map}",
-      "!**/LICENSE*",
-      "!**/README*",
-      "!**/.DS_Store",
       "!node_modules/**/*",
-      "node_modules/@ffmpeg-installer/**/*",
-      "node_modules/@ffprobe-installer/**/*"
+      "node_modules/@ffmpeg-installer/package.json",
+      "node_modules/@ffmpeg-installer/index.js",
+      "node_modules/@ffmpeg-installer/darwin-*/**/*",
+      "node_modules/@ffprobe-installer/package.json",
+      "node_modules/@ffprobe-installer/index.js",
+      "node_modules/@ffprobe-installer/darwin-*/**/*"
     ],
     "asarUnpack": [
-      "node_modules/@ffmpeg-installer/**/*",
-      "node_modules/@ffprobe-installer/**/*"
+      "node_modules/@ffmpeg-installer/darwin-*/**/*",
+      "node_modules/@ffprobe-installer/darwin-*/**/*"
     ],
     "extraResources": [
       {
         "from": "assets/",
         "to": "assets",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
       }
     ],
     "mac": {
