@@ -3,7 +3,7 @@ name: Build Electron App (macOS + Windows)
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # กด run เองได้จากหน้า Actions
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,7 +11,6 @@ jobs:
     strategy:
       matrix:
         os: [ macos-latest, windows-latest ]
-        arch: [ x64 ]
 
     steps:
       - name: Checkout source
@@ -22,23 +21,44 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies (ci if present, else install)
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install
+          fi
+        shell: bash
 
+      # macOS-specific fixes
       - name: Fix Python on macOS
         if: runner.os == 'macOS'
         run: |
           PY3=$(which python3)
           sudo ln -sf "$PY3" /usr/local/bin/python || true
           which python || true
+        shell: bash
 
-      - name: Build app
-        run: |
-          if [ "$RUNNER_OS" == "macOS" ]; then
-            npm run dist:mac
-          else
-            npm run dist:win
-          fi
+      - name: Clean dist (mac)
+        if: runner.os == 'macOS'
+        run: rm -rf dist
+        shell: bash
+
+      - name: Clean dist (win)
+        if: runner.os == 'Windows'
+        run: rmdir /s /q dist 2>$null || echo "no dist"
+        shell: powershell
+
+      # Build per-OS with clear condition (ไม่ใช้ if ในสคริปต์)
+      - name: Build macOS dmg
+        if: runner.os == 'macOS'
+        run: npm run dist:mac
+        shell: bash
+
+      - name: Build Windows exe
+        if: runner.os == 'Windows'
+        run: npm run dist:win
+        shell: powershell
 
       - name: Upload built artifacts
         uses: actions/upload-artifact@v4
