@@ -5,7 +5,6 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# ต้องมีสิทธิ์เขียนเพื่อสร้าง tag/release
 permissions:
   contents: write
 
@@ -86,7 +85,6 @@ jobs:
       contents: write
 
     steps:
-      # ต้อง fetch แบบเต็มเพื่อสร้าง/อ้างอิง tag ได้
       - name: Checkout (full history)
         uses: actions/checkout@v4
         with:
@@ -100,7 +98,6 @@ jobs:
       - name: List artifacts (debug)
         run: ls -R dist-artifacts || true
 
-      # สร้าง tag ถ้ายังไม่มี (กันกรณี release อิง tag ใหม่)
       - name: Create tag if not exists
         run: |
           TAG="v1.0.${{ github.run_number }}"
@@ -113,17 +110,21 @@ jobs:
             git push origin "$TAG"
           fi
 
-      # รวบรวม "เฉพาะไฟล์" ที่จะอัปโหลด (กันส่งโฟลเดอร์ขึ้น release)
+      # เก็บเฉพาะไฟล์ release จริง ๆ และตัดไฟล์จากโฟลเดอร์ unpacked ออก
       - name: Collect release files
         id: coll
         run: |
           mapfile -t FILES < <(find dist-artifacts -type f \( \
               -name "*.dmg" -o \
-              -name "*.exe" -o \
+              -name "*Setup*.exe" -o \
               -name "*.zip" -o \
               -name "*.blockmap" -o \
               -name "*.yml" \
-            \) -print)
+            \) \
+            -not -path "*/app.asar.unpacked/*" \
+            -not -path "*/win-unpacked/*" \
+            -not -path "*/node_modules/*" \
+            -print)
           if [ ${#FILES[@]} -eq 0 ]; then
             echo "No files found to release"; exit 1
           fi
@@ -140,6 +141,7 @@ jobs:
           commit: ${{ github.sha }}
           name: "Loop Video to Audio v1.0.${{ github.run_number }}"
           allowUpdates: true
+          replacesArtifacts: true
           removeArtifacts: true
           makeLatest: true
           generateReleaseNotes: true
