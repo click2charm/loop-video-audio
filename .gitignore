@@ -1,0 +1,12 @@
+# Node / Electron
+node_modules/
+dist/
+out/
+*.log
+
+# macOS system files
+.DS_Store
+
+# IDE configs
+.idea/
+.vscode/
