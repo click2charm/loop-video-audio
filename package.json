@@ -36,7 +36,10 @@
       "category": "public.app-category.video",
       "target": [
         {
-          "target": "dmg"
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
         }
       ]
     },
