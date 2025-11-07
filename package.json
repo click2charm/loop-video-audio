@@ -15,31 +15,40 @@
   "build": {
     "appId": "com.preecha.loopvideoaudio",
     "productName": "Loop Video to Audio",
-    "directories": { "output": "dist" },
+    "directories": {
+      "output": "dist"
+    },
     "files": [
       "**/*",
       "!dist",
       "!node_modules/.cache"
     ],
     "extraResources": [
-      { "from": "assets/", "to": "assets", "filter": ["**/*"] }
+      {
+        "from": "assets/",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "mac": {
       "category": "public.app-category.video",
       "target": [
-        { "target": "dmg" }
+        {
+          "target": "dmg"
+        }
       ]
-      /* ถ้ามีไฟล์ไอคอนจริงค่อยเปิดบรรทัดด้านล่าง
-      ,"icon": "assets/icon-mac.icns"
-      */
     },
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
-      /* ถ้ามีไฟล์ไอคอนจริงค่อยเปิดบรรทัดด้านล่าง
-      ,"icon": "assets/icon-win.ico"
-      */
     },
     "nsis": {
       "oneClick": true,
