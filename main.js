@@ -3,8 +3,8 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 
-const ffmpegPath = require('ffmpeg-static');
-const ffprobePath = require('ffprobe-static').path;
+const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const ffprobePath = require('@ffprobe-installer/ffprobe').path;
 
 // ฟอนต์: แยกไทย/อังกฤษ
 const FONT_THAI = path.join(__dirname, 'assets', 'NotoSansThai-Regular.ttf');
