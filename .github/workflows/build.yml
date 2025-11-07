@@ -58,9 +58,9 @@ jobs:
         run: rm -rf dist
         shell: bash
 
-      - name: Build macOS dmg (arm64)
+      - name: Build macOS dmg (Universal - Intel + Apple Silicon)
         if: runner.os == 'macOS'
-        run: npm run dist:mac -- --arm64
+        run: npm run dist:mac -- --universal
         shell: bash
 
       # ---------- Windows ----------
