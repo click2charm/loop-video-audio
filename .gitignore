@@ -10,3 +10,5 @@ out/
 # IDE configs
 .idea/
 .vscode/
+
+*.app
