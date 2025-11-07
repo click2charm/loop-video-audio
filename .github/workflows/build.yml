@@ -100,7 +100,7 @@ jobs:
       - name: List artifacts (debug)
         run: ls -R dist-artifacts || true
 
-      # สร้าง tag ถ้ายังไม่มี (แท็กไม่ชนทุก run)
+      # สร้าง tag ถ้ายังไม่มี (กันกรณี release อิง tag ใหม่)
       - name: Create tag if not exists
         run: |
           TAG="v1.0.${{ github.run_number }}"
@@ -113,7 +113,25 @@ jobs:
             git push origin "$TAG"
           fi
 
-      # ใช้ ncipollo แทน softprops เพื่ออัปโหลดไฟล์ทั้งหมดแบบเสถียร
+      # รวบรวม "เฉพาะไฟล์" ที่จะอัปโหลด (กันส่งโฟลเดอร์ขึ้น release)
+      - name: Collect release files
+        id: coll
+        run: |
+          mapfile -t FILES < <(find dist-artifacts -type f \( \
+              -name "*.dmg" -o \
+              -name "*.exe" -o \
+              -name "*.zip" -o \
+              -name "*.blockmap" -o \
+              -name "*.yml" \
+            \) -print)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No files found to release"; exit 1
+          fi
+          LIST=$(printf "%s," "${FILES[@]}")
+          LIST=${LIST%,}
+          echo "files=$LIST" >> $GITHUB_OUTPUT
+          echo "Will upload: $LIST"
+
       - name: Create/Update GitHub Release
         uses: ncipollo/release-action@v1
         with:
@@ -125,6 +143,5 @@ jobs:
           removeArtifacts: true
           makeLatest: true
           generateReleaseNotes: true
-          # อัปโหลดไฟล์ทั้งหมดภายใต้โฟลเดอร์ดาวน์โหลด artifacts
-          artifacts: "dist-artifacts/**/*"
+          artifacts: ${{ steps.coll.outputs.files }}
           artifactErrorsFailBuild: true
