@@ -9,12 +9,25 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ macos-latest, windows-latest ]
+        os: [macos-latest, windows-latest]
+
+    env:
+      # ปิด auto code signing / notarization ใน CI
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      ELECTRON_BUILDER_DISABLE_UPDATER: "true"
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
+      - name: Show basic env
+        run: |
+          node -v
+          npm -v
+          uname -a || ver
+        shell: bash
 
       - name: Use Node.js 20
         uses: actions/setup-node@v4
@@ -30,7 +43,7 @@ jobs:
           fi
         shell: bash
 
-      # macOS-specific fixes
+      # ----- macOS path -----
       - name: Fix Python on macOS
         if: runner.os == 'macOS'
         run: |
@@ -44,27 +57,30 @@ jobs:
         run: rm -rf dist
         shell: bash
 
+      - name: Build macOS dmg (arm64)
+        if: runner.os == 'macOS'
+        run: npm run dist:mac -- --arm64
+        shell: bash
+
+      # ----- Windows path -----
       - name: Clean dist (win)
         if: runner.os == 'Windows'
         run: rmdir /s /q dist 2>$null || echo "no dist"
         shell: powershell
 
-      # Build per-OS with clear condition (ไม่ใช้ if ในสคริปต์)
-      - name: Build macOS dmg
-        if: runner.os == 'macOS'
-        run: npm run dist:mac
-        shell: bash
-
-      - name: Build Windows exe
+      - name: Build Windows exe (x64)
         if: runner.os == 'Windows'
         run: npm run dist:win
         shell: powershell
 
+      # ----- Upload per-OS -----
       - name: Upload built artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }}-build
-          path: dist/*
+          path: dist/**
+          if-no-files-found: warn
 
   release:
     needs: build
@@ -74,6 +90,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist-artifacts
+
+      - name: List artifacts (debug)
+        run: ls -R dist-artifacts || true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

@@ -1,14 +1,7 @@
-# Node / Electron
 node_modules/
 dist/
-out/
+*.app
 *.log
-
-# macOS system files
 .DS_Store
-
-# IDE configs
 .idea/
 .vscode/
-
-*.app
