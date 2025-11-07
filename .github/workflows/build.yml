@@ -14,20 +14,12 @@ jobs:
         os: [macos-latest, windows-latest]
 
     env:
-      # ปิด auto code signing / notarization ใน CI
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
       ELECTRON_BUILDER_DISABLE_UPDATER: "true"
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-
-      - name: Show basic env
-        run: |
-          node -v
-          npm -v
-          uname -a || ver
-        shell: bash
 
       - name: Use Node.js 20
         uses: actions/setup-node@v4
@@ -43,7 +35,7 @@ jobs:
           fi
         shell: bash
 
-      # ----- macOS path -----
+      # ---------- macOS ----------
       - name: Fix Python on macOS
         if: runner.os == 'macOS'
         run: |
@@ -62,10 +54,11 @@ jobs:
         run: npm run dist:mac -- --arm64
         shell: bash
 
-      # ----- Windows path -----
+      # ---------- Windows ----------
       - name: Clean dist (win)
         if: runner.os == 'Windows'
-        run: rmdir /s /q dist 2>$null || echo "no dist"
+        run: |
+          if (Test-Path dist) { Remove-Item dist -Recurse -Force }
         shell: powershell
 
       - name: Build Windows exe (x64)
@@ -73,7 +66,7 @@ jobs:
         run: npm run dist:win
         shell: powershell
 
-      # ----- Upload per-OS -----
+      # ---------- Artifacts ----------
       - name: Upload built artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -90,9 +83,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist-artifacts
-
-      - name: List artifacts (debug)
-        run: ls -R dist-artifacts || true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
