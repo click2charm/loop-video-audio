@@ -53,14 +53,14 @@ jobs:
           which python || true
         shell: bash
 
-      - name: Clean dist (mac)
+      - name: Build macOS dmg (Intel x64)
         if: runner.os == 'macOS'
-        run: rm -rf dist
+        run: npm run dist:mac -- --x64
         shell: bash
 
-      - name: Build macOS dmg (Intel x64 + Apple Silicon arm64)
+      - name: Build macOS dmg (Apple Silicon arm64)
         if: runner.os == 'macOS'
-        run: npm run dist:mac
+        run: npm run dist:mac -- --arm64
         shell: bash
 
       # ---------- Windows ----------
