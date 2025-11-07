@@ -125,10 +125,12 @@ jobs:
               -name "*Setup*.exe" -o \
               -name "*.zip" -o \
               -name "*.blockmap" -o \
-              -name "*.yml" \
+              -name "latest*.yml" \
             \) \
             -not -path "*/app.asar.unpacked/*" \
             -not -path "*/win-unpacked/*" \
+            -not -path "*/mac/*" \
+            -not -path "*/linux-unpacked/*" \
             -not -path "*/node_modules/*" \
             -print)
           if [ ${#FILES[@]} -eq 0 ]; then
