@@ -24,6 +24,10 @@
       "renderer.js",
       "renderer.html",
       "package.json",
+      "!**/*.{md,ts,map}",
+      "!**/LICENSE*",
+      "!**/README*",
+      "!**/.DS_Store",
       "!node_modules/**/*",
       "node_modules/@ffmpeg-installer/**/*",
       "node_modules/@ffprobe-installer/**/*"
@@ -46,6 +50,21 @@
       "target": [
         {
           "target": "dmg"
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
         }
       ]
     },
