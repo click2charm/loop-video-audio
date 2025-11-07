@@ -55,12 +55,27 @@ jobs:
 
       - name: Build macOS dmg (Intel x64)
         if: runner.os == 'macOS'
-        run: npm run dist:mac -- --x64
+        run: |
+          # Remove arm64 binaries before building x64
+          rm -rf node_modules/@ffmpeg-installer/darwin-arm64 || true
+          rm -rf node_modules/@ffprobe-installer/darwin-arm64 || true
+          npm run dist:mac -- --x64
+        shell: bash
+
+      - name: Restore all binaries for arm64 build
+        if: runner.os == 'macOS'
+        run: |
+          # Reinstall ffmpeg installers to get all binaries back
+          npm install @ffmpeg-installer/ffmpeg @ffprobe-installer/ffprobe --force
         shell: bash
 
       - name: Build macOS dmg (Apple Silicon arm64)
         if: runner.os == 'macOS'
-        run: npm run dist:mac -- --arm64
+        run: |
+          # Remove x64 binaries before building arm64
+          rm -rf node_modules/@ffmpeg-installer/darwin-x64 || true
+          rm -rf node_modules/@ffprobe-installer/darwin-x64 || true
+          npm run dist:mac -- --arm64
         shell: bash
 
       # ---------- Windows ----------
