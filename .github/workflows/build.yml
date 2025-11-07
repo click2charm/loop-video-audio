@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# ให้สิทธิ์เขียน contents เพื่อสร้าง tag/release
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -78,17 +82,41 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    # ย้ำสิทธิ์ใน job นี้อีกครั้ง (กัน org policy เข้ม)
+    permissions:
+      contents: write
+
     steps:
+      # ต้อง checkout แบบ full history เพื่อสร้าง/พุชแท็กได้
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: dist-artifacts
 
+      # สร้าง tag ถ้ายังไม่มี (กันกรณี release อิง tag ใหม่)
+      - name: Create tag if not exists
+        run: |
+          TAG="v1.0.${{ github.run_number }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "CI release $TAG" ${{ github.sha }}
+            git push origin "$TAG"
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: v1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
           name: "Loop Video to Audio v1.0.${{ github.run_number }}"
+          generate_release_notes: true
           files: dist-artifacts/**/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
