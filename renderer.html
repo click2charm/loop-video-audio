@@ -4,90 +4,272 @@
   <meta charset="utf-8">
   <title>Loop Video to Audio</title>
   <style>
-    body { font-family: -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
-    pre { background: #111; color: #eee; padding: 12px; border-radius: 8px; }
-    button, input, select, label { font-size: 14px; }
-    button { margin-right: 8px; margin-bottom: 8px; }
-    .row { margin-top: 8px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 24px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .header .subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    .developer-info {
+      background: rgba(255,255,255,0.1);
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .developer-info a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .developer-info a:hover {
+      text-decoration: underline;
+    }
+    .content {
+      padding: 24px;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    button:active {
+      transform: translateY(0);
+    }
+    #btnRun {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    #btnRun:hover {
+      box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+    }
+    .section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+    .section h3 {
+      color: #333;
+      margin-bottom: 16px;
+      font-size: 18px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section h3::before {
+      content: '▶';
+      color: #667eea;
+      font-size: 14px;
+    }
+    .row {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    label {
+      font-size: 14px;
+      color: #555;
+      font-weight: 500;
+    }
+    input[type="text"],
+    input[type="number"],
+    select {
+      padding: 8px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #667eea;
+    }
+    pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: 'Courier New', monospace;
+      overflow: auto;
+      line-height: 1.6;
+    }
+    .file-status {
+      max-height: 200px;
+    }
+    .log-output {
+      max-height: 300px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .checkbox-label:hover {
+      background: #f0f0f0;
+    }
   </style>
 </head>
 <body>
-  <h1>Loop Video to Audio</h1>
+  <div class="container">
+    <div class="header">
+      <h1>🎬 Loop Video to Audio</h1>
+      <div class="subtitle">สร้างวิดีโอแบบวนซ้ำพร้อมเสียงและข้อความได้อย่างง่ายดาย</div>
+      <div class="developer-info">
+        พัฒนาโดย <a href="https://wfhiseasy.com" target="_blank">wfhiseasy.com</a>
+        | <a href="#" target="_blank">Prompt Muse Automated</a>
+      </div>
+    </div>
 
-  <div>
-    <button id="btnVideo">เลือกวิดีโอ</button>
-    <button id="btnAudios">เลือกไฟล์เสียง (หลายไฟล์ได้)</button>
-    <button id="btnOut">เลือกไฟล์ผลลัพธ์</button>
-    <button id="btnRun">เริ่มรวม</button>
+    <div class="content">
+      <div class="button-group">
+        <button id="btnVideo">📹 เลือกวิดีโอหรือรูปภาพ</button>
+        <button id="btnAudios">🎵 เลือกไฟล์เสียง (หลายไฟล์ได้)</button>
+        <button id="btnOut">💾 เลือกไฟล์ผลลัพธ์</button>
+        <button id="btnRun">▶️ เริ่มประมวลผล</button>
+      </div>
+
+      <div class="section">
+        <h3>ตัวเลือกข้อความและโลโก้</h3>
+
+        <div class="row">
+          <label class="checkbox-label">
+            <input id="centerMode" type="checkbox">
+            <span><b>จัดข้อความ "กึ่งกลางจอ" อัตโนมัติ</b></span>
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="checkbox-label">
+            <input id="textBackground" type="checkbox" checked>
+            <span><b>แสดงพื้นหลังตัวอักษร (กล่องดำโปร่งแสง)</b></span>
+          </label>
+        </div>
+
+        <div class="row">
+          <label>หัวเรื่อง (ใหญ่):</label>
+          <input id="titleText" type="text" placeholder="เช่น MELODIA" style="width:300px;">
+          <label>ขนาด:</label>
+          <input id="titleSize" type="number" value="64" style="width:80px;">
+        </div>
+
+        <div class="row">
+          <label>รองหัวเรื่อง:</label>
+          <input id="subtitleText" type="text" placeholder="เช่น รวมเพลงสากลเพราะ ๆ" style="width:300px;">
+          <label>ขนาด:</label>
+          <input id="subtitleSize" type="number" value="48" style="width:80px;">
+        </div>
+
+        <div class="row">
+          <label>แท็กไลน์:</label>
+          <input id="taglineText" type="text" placeholder="เช่น เพลิดเพลินและผ่อนคลาย..." style="width:300px;">
+          <label>ขนาด:</label>
+          <input id="taglineSize" type="number" value="36" style="width:80px;">
+        </div>
+
+        <div class="row">
+          <label>ข้อความเดี่ยว (โหมดปกติ):</label>
+          <input id="txtOverlay" type="text" placeholder="จะไม่ใช้เมื่อเปิดโหมดจัดกลาง" style="width:250px;">
+          <label>ตำแหน่ง:</label>
+          <select id="textPos">
+            <option value="br">ขวาล่าง</option>
+            <option value="tr">ขวาบน</option>
+            <option value="bl">ซ้ายล่าง</option>
+            <option value="tl">ซ้ายบน</option>
+          </select>
+          <label>ขนาด:</label>
+          <input id="fontSize" type="number" value="48" style="width:80px;">
+        </div>
+
+        <div class="row">
+          <button id="btnPickLogo">🖼️ เลือกโลโก้ (PNG/JPG)</button>
+          <span id="logoSel" style="color:#666; font-size:13px;"></span>
+        </div>
+
+        <div class="row">
+          <label>สเกลโลโก้ (0–1):</label>
+          <input id="logoScale" type="number" step="0.1" value="0.3" style="width:80px;">
+          <label>ความทึบ (0–1):</label>
+          <input id="logoOpacity" type="number" step="0.1" value="0.9" style="width:80px;">
+          <label>ตำแหน่ง:</label>
+          <select id="logoPos">
+            <option value="br">ขวาล่าง</option>
+            <option value="tr">ขวาบน</option>
+            <option value="bl">ซ้ายล่าง</option>
+            <option value="tl">ซ้ายบน</option>
+            <option value="center-before-title">กลางจอ ก่อนหัวเรื่อง</option>
+            <option value="center-after-tagline">กลางจอ หลังแท็กไลน์</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>สถานะไฟล์ที่เลือก</h3>
+        <pre id="sel" class="file-status"></pre>
+      </div>
+
+      <div class="section">
+        <h3>ผลการประมวลผล</h3>
+        <pre id="log" class="log-output"></pre>
+      </div>
+    </div>
   </div>
-
-  <div style="margin:14px 0;border-top:1px solid #ddd;padding-top:12px;">
-    <h3>Overlay Options</h3>
-
-    <div class="row">
-      <input id="centerMode" type="checkbox">
-      <label for="centerMode"><b>จัดข้อความ “กึ่งกลางจอ” อัตโนมัติ</b></label>
-    </div>
-
-    <div class="row">
-      <label>หัวเรื่อง (ใหญ่):</label>
-      <input id="titleText" placeholder="เช่น MELODIA" style="width:60%;">
-      <label style="margin-left:8px;">ขนาด:</label>
-      <input id="titleSize" type="number" value="64" style="width:80px;">
-    </div>
-
-    <div class="row">
-      <label>รองหัวเรื่อง:</label>
-      <input id="subtitleText" placeholder="เช่น รวมเพลงสากลเพราะ ๆ ..." style="width:60%;">
-      <label style="margin-left:8px;">ขนาด:</label>
-      <input id="subtitleSize" type="number" value="48" style="width:80px;">
-    </div>
-
-    <div class="row">
-      <label>แท็กไลน์:</label>
-      <input id="taglineText" placeholder="เช่น เพลิดเพลินและผ่อนคลายไปกับ..." style="width:60%;">
-      <label style="margin-left:8px;">ขนาด:</label>
-      <input id="taglineSize" type="number" value="36" style="width:80px;">
-    </div>
-
-    <div class="row">
-      <label>ข้อความเดี่ยว (โหมดปกติ):</label>
-      <input id="txtOverlay" placeholder="จะไม่ใช้เมื่อเปิดโหมดจัดกลาง" style="width:60%;">
-      <label style="margin-left:8px;">ตำแหน่ง:</label>
-      <select id="textPos">
-        <option value="br">ขวาล่าง</option>
-        <option value="tr">ขวาบน</option>
-        <option value="bl">ซ้ายล่าง</option>
-        <option value="tl">ซ้ายบน</option>
-      </select>
-      <label style="margin-left:8px;">ขนาด:</label>
-      <input id="fontSize" type="number" value="48" style="width:80px;">
-    </div>
-
-    <div class="row">
-      <button id="btnPickLogo">เลือกโลโก้ (PNG/JPG)</button>
-      <span id="logoSel" style="margin-left:8px;color:#666;"></span>
-      <label style="margin-left:12px;">สเกลโลโก้ (0–1):</label>
-      <input id="logoScale" type="number" step="0.1" value="0.3" style="width:80px;">
-      <label style="margin-left:8px;">ทึบ (0–1):</label>
-      <input id="logoOpacity" type="number" step="0.1" value="0.9" style="width:80px;">
-      <label style="margin-left:8px;">มุม/ตำแหน่ง:</label>
-      <select id="logoPos">
-        <option value="br">ขวาล่าง</option>
-        <option value="tr">ขวาบน</option>
-        <option value="bl">ซ้ายล่าง</option>
-        <option value="tl">ซ้ายบน</option>
-        <option value="center-before-title">กลางจอ ก่อนหัวเรื่อง</option>
-        <option value="center-after-tagline">กลางจอ หลังแท็กไลน์</option>
-      </select>
-    </div>
-  </div>
-
-  <h3>สถานะไฟล์ที่เลือก</h3>
-  <pre id="sel"></pre>
-
-  <h3>Log</h3>
-  <pre id="log" style="height:260px; overflow:auto;"></pre>
 
   <script src="renderer.js"></script>
 </body>

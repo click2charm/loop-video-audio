@@ -75,7 +75,10 @@ function pickFontForText(text='') {
 
 ipcMain.handle('pick-video', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), {
-    filters: [{ name: 'Video', extensions: ['mp4','mov','mkv'] }], properties: ['openFile']
+    filters: [
+      { name: 'Video/Image', extensions: ['mp4','mov','mkv','png','jpg','jpeg'] }
+    ],
+    properties: ['openFile']
   });
   return canceled ? null : filePaths[0];
 });
@@ -103,6 +106,7 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
     const {
       videoPath, audioFiles, outputPath,
       centerMode = false,
+      textBackground = true,
       titleText = '', titleSize = 64,
       subtitleText = '', subtitleSize = 48,
       taglineText = '', taglineSize = 36,
@@ -111,10 +115,13 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
     } = payload || {};
 
     if (!videoPath || !audioFiles?.length || !outputPath) {
-      throw new Error('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ, เสียง, ผลลัพธ์)');
+      throw new Error('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ/รูปภาพ, เสียง, ผลลัพธ์)');
     }
 
     const tmp = app.getPath('temp');
+
+    // Check if input is image
+    const isImage = /\.(png|jpe?g)$/i.test(videoPath);
 
     // 1) รวมเสียงถ้ามีหลายไฟล์
     let mergedAudio = audioFiles[0];
@@ -127,9 +134,18 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
     }
 
     // 2) ฟิลเตอร์วิดีโอ
-    const args = ['-stream_loop','-1','-i', videoPath, '-i', mergedAudio];
+    const args = isImage
+      ? ['-loop', '1', '-i', videoPath, '-i', mergedAudio]  // For images: loop the image
+      : ['-stream_loop', '-1', '-i', videoPath, '-i', mergedAudio];  // For video: loop the video
+
     let chains = [];
     let videoLabel = '0:v';
+
+    // For images, add fps filter to make it a proper video stream
+    if (isImage) {
+      chains.push('[0:v]fps=24[v_fps]');
+      videoLabel = 'v_fps';
+    }
 
     if (logoPath) args.push('-i', logoPath);
 
@@ -170,12 +186,12 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
         const lblOut = `vc${i+1}`;
         const txt = escDrawText(lines[i].text);
         const fontFile = pickFontForText(lines[i].text);
+        const boxParams = textBackground ? ':box=1:boxcolor=black@0.25:boxborderw=16' : '';
         chains.push(
           `[${lblIn}]drawtext=fontfile='${fontFile}':text='${txt}':` +
           `fontsize=${lines[i].size}:fontcolor=white@0.98:` +
           `shadowcolor=black@0.6:shadowx=2:shadowy=2:` +
-          `x=(w-text_w)/2:y=${lines[i].y}-text_h/2:` +
-          `box=1:boxcolor=black@0.25:boxborderw=16[${lblOut}]`
+          `x=(w-text_w)/2:y=${lines[i].y}-text_h/2${boxParams}[${lblOut}]`
         );
         videoLabel = lblOut;
       }
@@ -183,11 +199,12 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
       const { x: tx, y: ty } = posExpr(textPos);
       const txt = escDrawText(overlayText.trim());
       const fontFile = pickFontForText(overlayText.trim());
+      const boxParams = textBackground ? ':box=1:boxcolor=black@0.25:boxborderw=12' : '';
       chains.push(
         `[${videoLabel}]drawtext=fontfile='${fontFile}':text='${txt}':` +
         `fontsize=${fontSize}:fontcolor=white@0.96:` +
         `shadowcolor=black@0.6:shadowx=2:shadowy=2:` +
-        `x=${tx}:y=${ty}:box=1:boxcolor=black@0.25:boxborderw=12[vout]`
+        `x=${tx}:y=${ty}${boxParams}[vout]`
       );
       videoLabel = 'vout';
     }

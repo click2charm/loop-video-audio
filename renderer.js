@@ -32,7 +32,7 @@ document.getElementById('btnPickLogo').onclick = async ()=>{
 
 document.getElementById('btnRun').onclick = async ()=>{
   if(!videoPath || !outputPath || !audioFiles.length){
-    appendLog('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ, เสียง, ผลลัพธ์)');
+    appendLog('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ/รูปภาพ, เสียง, ผลลัพธ์)');
     return;
   }
   const payload = {
@@ -40,6 +40,7 @@ document.getElementById('btnRun').onclick = async ()=>{
     audioFiles,
     outputPath,
     centerMode: document.getElementById('centerMode').checked,
+    textBackground: document.getElementById('textBackground').checked,
     titleText: document.getElementById('titleText').value || '',
     titleSize: Number(document.getElementById('titleSize').value) || 64,
     subtitleText: document.getElementById('subtitleText').value || '',
