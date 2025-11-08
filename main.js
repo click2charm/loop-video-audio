@@ -119,6 +119,41 @@ function posExpr(anchor) {
     case 'br': default: return { x: `W-w-${m}`, y: `H-h-${m}` };
   }
 }
+function getVideoEncodingArgs(format, quality) {
+  // For MOV with ProRes codec (high quality, large file size)
+  if (format === 'mov') {
+    const proresProfiles = {
+      'medium': 'proxy',      // ProRes Proxy
+      'high': '2',            // ProRes 422
+      'very-high': '3',       // ProRes 422 HQ
+      'ultra': '4'            // ProRes 4444
+    };
+    const profile = proresProfiles[quality] || '3';
+    return ['-c:v', 'prores_ks', '-profile:v', profile, '-pix_fmt', 'yuv422p10le'];
+  }
+
+  // For MOV with H.264 (better quality than MP4 H.264)
+  if (format === 'mov-h264') {
+    const settings = {
+      'medium': { crf: 20, bitrate: '8000k' },
+      'high': { crf: 18, bitrate: '12000k' },
+      'very-high': { crf: 16, bitrate: '18000k' },
+      'ultra': { crf: 14, bitrate: '25000k' }
+    };
+    const { crf, bitrate } = settings[quality] || settings['very-high'];
+    return ['-c:v', 'libx264', '-crf', String(crf), '-b:v', bitrate, '-pix_fmt', 'yuv420p', '-preset', 'slow'];
+  }
+
+  // For MP4 with H.264 (balanced quality and file size)
+  const settings = {
+    'medium': { crf: 23, bitrate: '5000k' },
+    'high': { crf: 20, bitrate: '8000k' },
+    'very-high': { crf: 18, bitrate: '12000k' },
+    'ultra': { crf: 15, bitrate: '20000k' }
+  };
+  const { crf, bitrate } = settings[quality] || settings['very-high'];
+  return ['-c:v', 'libx264', '-crf', String(crf), '-b:v', bitrate, '-pix_fmt', 'yuv420p', '-preset', 'medium'];
+}
 function escDrawText(s='') {
   return s.replace(/\\/g, '\\\\').replace(/:/g, '\\:').replace(/'/g, "\\\\'");
 }
@@ -146,7 +181,12 @@ ipcMain.handle('pick-audios', async () => {
 });
 ipcMain.handle('pick-output', async () => {
   const { canceled, filePath } = await dialog.showSaveDialog(BrowserWindow.getFocusedWindow(), {
-    filters: [{ name: 'MP4', extensions: ['mp4'] }], defaultPath: 'output.mp4'
+    filters: [
+      { name: 'Video Files', extensions: ['mp4', 'mov'] },
+      { name: 'MP4', extensions: ['mp4'] },
+      { name: 'MOV', extensions: ['mov'] }
+    ],
+    defaultPath: 'output.mp4'
   });
   return canceled ? null : filePath;
 });
@@ -161,6 +201,8 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
   try {
     const {
       videoPath, audioFiles, outputPath,
+      outputFormat = 'mp4',
+      videoQuality = 'very-high',
       centerMode = false,
       textBackground = true,
       titleText = '', titleSize = 64,
@@ -289,13 +331,17 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
     }
 
     // 3) encode & ตัดตามความยาวเสียง
-    args.push(
-      '-shortest',
-      '-c:v','libx264','-pix_fmt','yuv420p',
-      '-c:a','aac','-b:a','192k',
-      '-movflags','+faststart',
-      outputPath
-    );
+    const encodingArgs = getVideoEncodingArgs(outputFormat, videoQuality);
+    args.push('-shortest');
+    args.push(...encodingArgs);
+    args.push('-c:a', 'aac', '-b:a', '192k');
+
+    // Add faststart for MP4/MOV for better streaming
+    if (outputFormat === 'mp4' || outputFormat === 'mov-h264') {
+      args.push('-movflags', '+faststart');
+    }
+
+    args.push(outputPath);
 
     win?.webContents.send('progress', { percent: 0, status: 'กำลังสร้างวิดีโอ...' });
     await runFFmpeg(args, audioDuration, 'กำลังสร้างวิดีโอ...');

@@ -74,6 +74,8 @@ document.getElementById('btnRun').onclick = async ()=>{
     videoPath,
     audioFiles,
     outputPath,
+    outputFormat: document.getElementById('outputFormat').value || 'mp4',
+    videoQuality: document.getElementById('videoQuality').value || 'very-high',
     centerMode: document.getElementById('centerMode').checked,
     textBackground: document.getElementById('textBackground').checked,
     titleText: document.getElementById('titleText').value || '',
