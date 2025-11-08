@@ -2,9 +2,26 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
+const os = require('os');
 
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const ffprobePath = require('@ffprobe-installer/ffprobe').path;
+// Determine architecture and paths
+const arch = os.arch(); // 'x64' or 'arm64'
+
+// In packaged app, ffmpeg/ffprobe are in Resources folder
+// In development, use the npm packages
+let ffmpegPath, ffprobePath;
+
+if (app.isPackaged) {
+  const resourcesPath = process.resourcesPath;
+  const ffmpegFolder = arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg';
+  const ffprobeFolder = arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe';
+
+  ffmpegPath = path.join(resourcesPath, ffmpegFolder, 'ffmpeg');
+  ffprobePath = path.join(resourcesPath, ffprobeFolder, 'ffprobe');
+} else {
+  ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+  ffprobePath = require('@ffprobe-installer/ffprobe').path;
+}
 
 // ฟอนต์: แยกไทย/อังกฤษ
 const FONT_THAI = path.join(__dirname, 'assets', 'NotoSansThai-Regular.ttf');
