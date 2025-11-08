@@ -24,8 +24,14 @@ if (app.isPackaged) {
 }
 
 // ฟอนต์: แยกไทย/อังกฤษ
-const FONT_THAI = path.join(__dirname, 'assets', 'NotoSansThai-Regular.ttf');
-const FONT_LATIN = path.join(__dirname, 'assets', 'NotoSans-Regular.ttf');
+// In packaged app, assets are in Resources folder
+// In development, assets are in project root
+const assetsPath = app.isPackaged
+  ? path.join(process.resourcesPath, 'assets')
+  : path.join(__dirname, 'assets');
+
+const FONT_THAI = path.join(assetsPath, 'NotoSansThai-Regular.ttf');
+const FONT_LATIN = path.join(assetsPath, 'NotoSans-Regular.ttf');
 
 let win;
 function createWindow() {
