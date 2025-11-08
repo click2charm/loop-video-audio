@@ -23,23 +23,32 @@
       "preload.js",
       "renderer.js",
       "renderer.html",
-      "package.json",
-      "!node_modules/**/*",
-      "node_modules/@ffmpeg-installer/package.json",
-      "node_modules/@ffmpeg-installer/index.js",
-      "node_modules/@ffmpeg-installer/darwin-*/**/*",
-      "node_modules/@ffprobe-installer/package.json",
-      "node_modules/@ffprobe-installer/index.js",
-      "node_modules/@ffprobe-installer/darwin-*/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/@ffmpeg-installer/darwin-*/**/*",
-      "node_modules/@ffprobe-installer/darwin-*/**/*"
+      "package.json"
     ],
     "extraResources": [
       {
         "from": "assets/",
         "to": "assets",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@ffmpeg-installer/darwin-x64",
+        "to": "ffmpeg",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@ffmpeg-installer/darwin-arm64",
+        "to": "ffmpeg-arm64",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/darwin-x64",
+        "to": "ffprobe",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/darwin-arm64",
+        "to": "ffprobe-arm64",
         "filter": ["**/*"]
       }
     ],
