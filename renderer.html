@@ -194,6 +194,32 @@
       </div>
 
       <div class="section">
+        <h3>ตัวเลือกคุณภาพวิดีโอ</h3>
+
+        <div class="row">
+          <label><b>รูปแบบไฟล์:</b></label>
+          <select id="outputFormat" style="width:120px;">
+            <option value="mp4">MP4 (H.264)</option>
+            <option value="mov">MOV (ProRes)</option>
+            <option value="mov-h264">MOV (H.264 HQ)</option>
+          </select>
+          <label style="margin-left: 20px;"><b>คุณภาพวิดีโอ:</b></label>
+          <select id="videoQuality" style="width:150px;">
+            <option value="medium">Medium (ปกติ)</option>
+            <option value="high">High (สูง)</option>
+            <option value="very-high" selected>Very High (สูงมาก)</option>
+            <option value="ultra">Ultra (ไม่เสีย)</option>
+          </select>
+        </div>
+        <div class="row">
+          <p style="font-size:12px; color:#666; margin:8px 0;">
+            💡 <b>คำแนะนำ:</b> MOV (ProRes) ให้คุณภาพสูงสุด เหมือน DaVinci Resolve แต่ไฟล์จะใหญ่กว่า |
+            MP4 (H.264) ให้ไฟล์เล็กกว่า แต่ quality Very High ขึ้นไปก็คมชัดดีมาก
+          </p>
+        </div>
+      </div>
+
+      <div class="section">
         <h3>ตัวเลือกข้อความและโลโก้</h3>
 
         <div class="row">
