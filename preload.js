@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld('api', {
   pickLogo: () => ipcRenderer.invoke('pick-logo'),
   mergeAndLoop: (payload) => ipcRenderer.invoke('merge-and-loop', payload),
   onFfmpegLog: (cb) => ipcRenderer.on('ffmpeg-log', (_e, line) => cb(line)),
+  onProgress: (cb) => ipcRenderer.on('progress', (_e, data) => cb(data)),
 });

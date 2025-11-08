@@ -44,12 +44,68 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 // ---------- utils ----------
-function runFFmpeg(args) {
+// Get duration of audio/video file using ffprobe
+function getDuration(filePath) {
+  return new Promise((resolve, reject) => {
+    if (!ffprobePath) return reject(new Error('ไม่พบ ffprobe'));
+    const proc = spawn(ffprobePath, [
+      '-v', 'error',
+      '-show_entries', 'format=duration',
+      '-of', 'default=noprint_wrappers=1:nokey=1',
+      filePath
+    ], { windowsHide: true });
+
+    let output = '';
+    proc.stdout.on('data', d => output += d.toString());
+    proc.on('error', reject);
+    proc.on('close', code => {
+      if (code === 0) {
+        const duration = parseFloat(output.trim());
+        resolve(isNaN(duration) ? 0 : duration);
+      } else {
+        reject(new Error(`ffprobe exited ${code}`));
+      }
+    });
+  });
+}
+
+// Convert time string (HH:MM:SS.MS) to seconds
+function timeToSeconds(timeStr) {
+  const parts = timeStr.split(':');
+  if (parts.length !== 3) return 0;
+  const hours = parseFloat(parts[0]) || 0;
+  const minutes = parseFloat(parts[1]) || 0;
+  const seconds = parseFloat(parts[2]) || 0;
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+function runFFmpeg(args, totalDuration = 0, statusMessage = '') {
   return new Promise((resolve, reject) => {
     if (!ffmpegPath) return reject(new Error('ไม่พบ ffmpeg-static'));
     const proc = spawn(ffmpegPath, args, { windowsHide: true });
+
     proc.stdout.on('data', d => win?.webContents.send('ffmpeg-log', d.toString()));
-    proc.stderr.on('data', d => win?.webContents.send('ffmpeg-log', d.toString()));
+
+    proc.stderr.on('data', d => {
+      const line = d.toString();
+      win?.webContents.send('ffmpeg-log', line);
+
+      // Parse progress from FFmpeg output
+      if (totalDuration > 0) {
+        const timeMatch = line.match(/time=(\d{2}:\d{2}:\d{2}\.\d{2})/);
+        if (timeMatch) {
+          const currentTime = timeToSeconds(timeMatch[1]);
+          const percent = Math.min(100, Math.round((currentTime / totalDuration) * 100));
+          win?.webContents.send('progress', {
+            percent,
+            currentTime,
+            totalDuration,
+            status: statusMessage
+          });
+        }
+      }
+    });
+
     proc.on('error', reject);
     proc.on('close', code => code === 0 ? resolve() : reject(new Error(`FFmpeg exited ${code}`)));
   });
@@ -125,12 +181,29 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
 
     // 1) รวมเสียงถ้ามีหลายไฟล์
     let mergedAudio = audioFiles[0];
+    let audioDuration = 0;
+
     if (audioFiles.length > 1) {
+      win?.webContents.send('progress', { percent: 0, status: 'กำลังรวมไฟล์เสียง...' });
+
+      // Calculate total duration of all audio files
+      for (const audioFile of audioFiles) {
+        const duration = await getDuration(audioFile);
+        audioDuration += duration;
+      }
+
       const listPath = path.join(tmp, `list_${Date.now()}.txt`);
       const content = audioFiles.map(p => `file '${p.replace(/'/g, `'\\''`)}'`).join('\n');
       fs.writeFileSync(listPath, content, 'utf8');
       mergedAudio = path.join(tmp, `merged_${Date.now()}.m4a`);
-      await runFFmpeg(['-f','concat','-safe','0','-i', listPath, '-c:a','aac','-b:a','192k', mergedAudio]);
+      await runFFmpeg(
+        ['-f','concat','-safe','0','-i', listPath, '-c:a','aac','-b:a','192k', mergedAudio],
+        audioDuration,
+        'กำลังรวมไฟล์เสียง...'
+      );
+    } else {
+      // Get duration of single audio file
+      audioDuration = await getDuration(mergedAudio);
     }
 
     // 2) ฟิลเตอร์วิดีโอ
@@ -224,7 +297,12 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
       outputPath
     );
 
-    await runFFmpeg(args);
+    win?.webContents.send('progress', { percent: 0, status: 'กำลังสร้างวิดีโอ...' });
+    await runFFmpeg(args, audioDuration, 'กำลังสร้างวิดีโอ...');
+
+    // Send completion
+    win?.webContents.send('progress', { percent: 100, status: 'เสร็จสิ้น!' });
+
     return { ok: true };
 
   } catch (err) {

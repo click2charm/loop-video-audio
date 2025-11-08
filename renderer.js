@@ -3,6 +3,10 @@ let videoPath=null, audioFiles=[], outputPath=null, logoPath=null;
 const sel = document.getElementById('sel');
 const log = document.getElementById('log');
 const logoSel = document.getElementById('logoSel');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const progressStatus = document.getElementById('progressStatus');
 
 function renderSel(){
   sel.textContent = JSON.stringify({ videoPath, audioFiles, outputPath, logoPath }, null, 2);
@@ -10,6 +14,37 @@ function renderSel(){
 function appendLog(line){
   log.textContent += line + '\n';
   log.scrollTop = log.scrollHeight;
+}
+function updateProgress(data){
+  const { percent = 0, status = '', currentTime = 0, totalDuration = 0 } = data;
+
+  // Show progress container
+  progressContainer.style.display = 'block';
+
+  // Update progress bar
+  progressBar.style.width = `${percent}%`;
+  progressText.textContent = `${percent}%`;
+
+  // Update status message
+  let statusMsg = status;
+  if (currentTime > 0 && totalDuration > 0) {
+    const currentMin = Math.floor(currentTime / 60);
+    const currentSec = Math.floor(currentTime % 60);
+    const totalMin = Math.floor(totalDuration / 60);
+    const totalSec = Math.floor(totalDuration % 60);
+    statusMsg += ` (${currentMin}:${currentSec.toString().padStart(2, '0')} / ${totalMin}:${totalSec.toString().padStart(2, '0')})`;
+  }
+  progressStatus.textContent = statusMsg;
+
+  // Hide progress container if completed
+  if (percent >= 100) {
+    setTimeout(() => {
+      progressContainer.style.display = 'none';
+      progressBar.style.width = '0%';
+      progressText.textContent = '0%';
+      progressStatus.textContent = '';
+    }, 3000);
+  }
 }
 
 document.getElementById('btnVideo').onclick = async ()=>{
@@ -63,3 +98,4 @@ document.getElementById('btnRun').onclick = async ()=>{
 };
 
 window.api.onFfmpegLog(appendLog);
+window.api.onProgress(updateProgress);
