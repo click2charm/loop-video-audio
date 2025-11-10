@@ -1,4 +1,4 @@
-let videoPath=null, audioFiles=[], outputPath=null, logoPath=null;
+let videoFiles=[], audioFiles=[], outputPath=null, logoPath=null;
 
 const sel = document.getElementById('sel');
 const log = document.getElementById('log');
@@ -9,7 +9,7 @@ const progressText = document.getElementById('progressText');
 const progressStatus = document.getElementById('progressStatus');
 
 function renderSel(){
-  sel.textContent = JSON.stringify({ videoPath, audioFiles, outputPath, logoPath }, null, 2);
+  sel.textContent = JSON.stringify({ videoFiles, audioFiles, outputPath, logoPath }, null, 2);
 }
 function appendLog(line){
   log.textContent += line + '\n';
@@ -48,7 +48,7 @@ function updateProgress(data){
 }
 
 document.getElementById('btnVideo').onclick = async ()=>{
-  videoPath = await window.api.pickVideo();
+  videoFiles = await window.api.pickVideo();
   renderSel();
 };
 document.getElementById('btnAudios').onclick = async ()=>{
@@ -66,12 +66,12 @@ document.getElementById('btnPickLogo').onclick = async ()=>{
 };
 
 document.getElementById('btnRun').onclick = async ()=>{
-  if(!videoPath || !outputPath || !audioFiles.length){
+  if(!videoFiles.length || !outputPath || !audioFiles.length){
     appendLog('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ/รูปภาพ, เสียง, ผลลัพธ์)');
     return;
   }
   const payload = {
-    videoPath,
+    videoFiles,
     audioFiles,
     outputPath,
     outputFormat: document.getElementById('outputFormat').value || 'mp4',

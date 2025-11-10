@@ -91,6 +91,14 @@ jobs:
         shell: powershell
 
       # ---------- Artifacts ----------
+      - name: Delete old artifacts
+        if: always()
+        uses: geekyeggo/delete-artifact@v5
+        continue-on-error: true
+        with:
+          name: ${{ runner.os }}-build
+          failOnError: false
+
       - name: Upload built artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -98,6 +106,7 @@ jobs:
           name: ${{ runner.os }}-build
           path: dist/**
           if-no-files-found: warn
+          retention-days: 7  # Keep artifacts for 7 days only
 
   release:
     needs: build
