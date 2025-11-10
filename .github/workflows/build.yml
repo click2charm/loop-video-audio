@@ -90,82 +90,29 @@ jobs:
         run: npm run dist:win
         shell: powershell
 
-      # ---------- Artifacts ----------
-      - name: Delete old artifacts
-        if: always()
-        uses: geekyeggo/delete-artifact@v5
-        continue-on-error: true
-        with:
-          name: ${{ runner.os }}-build
-          failOnError: false
-
-      - name: Upload built artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ runner.os }}-build
-          path: dist/**
-          if-no-files-found: warn
-          retention-days: 7  # Keep artifacts for 7 days only
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Checkout (full history)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist-artifacts
-
-      - name: List artifacts (debug)
-        run: ls -R dist-artifacts || true
-
+      # ---------- Create Release and Upload Files Directly ----------
       - name: Create tag if not exists
         run: |
           TAG="v1.0.${{ github.run_number }}"
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            echo "Tag $TAG already exists."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git tag -a "$TAG" -m "CI release $TAG" ${{ github.sha }}
-            git push origin "$TAG"
-          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "CI release $TAG" ${{ github.sha }} || true
+          git push origin "$TAG" || true
+        shell: bash
 
-      # เก็บเฉพาะไฟล์ release จริง ๆ และตัดไฟล์จากโฟลเดอร์ unpacked ออก
       - name: Collect release files
-        id: coll
+        id: collect
         run: |
-          mapfile -t FILES < <(find dist-artifacts -type f \( \
-              -name "*.dmg" -o \
-              -name "*Setup*.exe" -o \
-              -name "*.zip" -o \
-              -name "*.blockmap" -o \
-              -name "latest*.yml" \
-            \) \
-            -not -path "*/app.asar.unpacked/*" \
-            -not -path "*/win-unpacked/*" \
-            -not -path "*/mac/*" \
-            -not -path "*/linux-unpacked/*" \
-            -not -path "*/node_modules/*" \
-            -print)
-          if [ ${#FILES[@]} -eq 0 ]; then
-            echo "No files found to release"; exit 1
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            FILES=$(find dist -type f \( -name "*.exe" -o -name "*.blockmap" -o -name "latest*.yml" \) -not -path "*/win-unpacked/*" -not -path "*/node_modules/*" | tr '\n' ',' | sed 's/,$//')
+          else
+            FILES=$(find dist -type f \( -name "*.dmg" -o -name "*.blockmap" -o -name "latest*.yml" \) -not -path "*/mac/*" -not -path "*/node_modules/*" | tr '\n' ',' | sed 's/,$//')
           fi
-          LIST=$(printf "%s," "${FILES[@]}")
-          LIST=${LIST%,}
-          echo "files=$LIST" >> $GITHUB_OUTPUT
-          echo "Will upload: $LIST"
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+          echo "Will upload: $FILES"
+        shell: bash
 
-      - name: Create/Update GitHub Release
+      - name: Upload to GitHub Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -174,8 +121,9 @@ jobs:
           name: "Loop Video to Audio v1.0.${{ github.run_number }}"
           allowUpdates: true
           replacesArtifacts: true
-          removeArtifacts: true
+          removeArtifacts: false
           makeLatest: true
           generateReleaseNotes: true
-          artifacts: ${{ steps.coll.outputs.files }}
-          artifactErrorsFailBuild: true
+          artifacts: ${{ steps.collect.outputs.files }}
+          artifactErrorsFailBuild: false
+          skipIfReleaseExists: false
