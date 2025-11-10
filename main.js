@@ -169,9 +169,9 @@ ipcMain.handle('pick-video', async () => {
     filters: [
       { name: 'Video/Image', extensions: ['mp4','mov','mkv','png','jpg','jpeg'] }
     ],
-    properties: ['openFile']
+    properties: ['openFile', 'multiSelections']
   });
-  return canceled ? null : filePaths[0];
+  return canceled ? [] : filePaths;
 });
 ipcMain.handle('pick-audios', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), {
@@ -200,7 +200,7 @@ ipcMain.handle('pick-logo', async () => {
 ipcMain.handle('merge-and-loop', async (_e, payload) => {
   try {
     const {
-      videoPath, audioFiles, outputPath,
+      videoFiles, audioFiles, outputPath,
       outputFormat = 'mp4',
       videoQuality = 'very-high',
       centerMode = false,
@@ -212,16 +212,35 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
       logoPath = '', logoScale = 0.3, logoOpacity = 0.9, logoPos = 'br'
     } = payload || {};
 
-    if (!videoPath || !audioFiles?.length || !outputPath) {
+    if (!videoFiles?.length || !audioFiles?.length || !outputPath) {
       throw new Error('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ/รูปภาพ, เสียง, ผลลัพธ์)');
     }
 
     const tmp = app.getPath('temp');
 
-    // Check if input is image
+    // 1) รวมวิดีโอถ้ามีหลายไฟล์
+    let videoPath = videoFiles[0];
     const isImage = /\.(png|jpe?g)$/i.test(videoPath);
 
-    // 1) รวมเสียงถ้ามีหลายไฟล์
+    if (videoFiles.length > 1 && !isImage) {
+      win?.webContents.send('progress', { percent: 0, status: 'กำลังต่อวิดีโอหลายไฟล์...' });
+
+      // Create concat list file
+      const videoListPath = path.join(tmp, `video_list_${Date.now()}.txt`);
+      const videoListContent = videoFiles.map(p => `file '${p.replace(/'/g, `'\\''`)}'`).join('\n');
+      fs.writeFileSync(videoListPath, videoListContent, 'utf8');
+
+      // Concatenate videos
+      const concatenatedVideo = path.join(tmp, `concatenated_${Date.now()}.mp4`);
+      await runFFmpeg(
+        ['-f', 'concat', '-safe', '0', '-i', videoListPath, '-c', 'copy', concatenatedVideo],
+        0,
+        'กำลังต่อวิดีโอหลายไฟล์...'
+      );
+      videoPath = concatenatedVideo;
+    }
+
+    // 2) รวมเสียงถ้ามีหลายไฟล์
     let mergedAudio = audioFiles[0];
     let audioDuration = 0;
 
@@ -248,7 +267,7 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
       audioDuration = await getDuration(mergedAudio);
     }
 
-    // 2) ฟิลเตอร์วิดีโอ
+    // 3) ฟิลเตอร์วิดีโอ
     const args = isImage
       ? ['-loop', '1', '-i', videoPath, '-i', mergedAudio]  // For images: loop the image
       : ['-stream_loop', '-1', '-i', videoPath, '-i', mergedAudio];  // For video: loop the video
@@ -330,7 +349,7 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
       args.push('-shortest', '-map','0:v:0','-map','1:a:0');
     }
 
-    // 3) encode & ตัดตามความยาวเสียง
+    // 4) encode & ตัดตามความยาวเสียง
     const encodingArgs = getVideoEncodingArgs(outputFormat, videoQuality);
     args.push('-shortest');
     args.push(...encodingArgs);
