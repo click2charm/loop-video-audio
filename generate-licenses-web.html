@@ -447,7 +447,8 @@
 
       updateStatus('☁️ กำลังอัปโหลดไป Firebase...');
 
-      const dbUrl = `https://${projectId}-default-rtdb.firebaseio.com`;
+      // Try asia-southeast1 first (most common for Thailand)
+      let dbUrl = `https://${projectId}-default-rtdb.asia-southeast1.firebasedatabase.app`;
       const keys = Object.keys(generatedLicenses);
       const batchSize = 100; // Firebase has limits
       let uploaded = 0;
