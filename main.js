@@ -3,6 +3,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
+const license = require('./license');
 
 // Determine architecture and paths
 const arch = os.arch(); // 'x64' or 'arm64'
@@ -232,6 +233,23 @@ ipcMain.handle('pick-logo', async () => {
     filters: [{ name: 'Image', extensions: ['png','jpg','jpeg'] }], properties: ['openFile']
   });
   return canceled ? null : filePaths[0];
+});
+
+// ---------- License System ----------
+ipcMain.handle('check-license', async () => {
+  return license.checkLicense();
+});
+
+ipcMain.handle('get-machine-id', async () => {
+  return license.getMachineId();
+});
+
+ipcMain.handle('activate-license', async (_e, licenseKey) => {
+  const result = license.validateLicenseKey(licenseKey);
+  if (result.valid) {
+    license.saveLicense(licenseKey);
+  }
+  return result;
 });
 
 ipcMain.handle('merge-and-loop', async (_e, payload) => {

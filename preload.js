@@ -8,4 +8,8 @@ contextBridge.exposeInMainWorld('api', {
   mergeAndLoop: (payload) => ipcRenderer.invoke('merge-and-loop', payload),
   onFfmpegLog: (cb) => ipcRenderer.on('ffmpeg-log', (_e, line) => cb(line)),
   onProgress: (cb) => ipcRenderer.on('progress', (_e, data) => cb(data)),
+  // License
+  checkLicense: () => ipcRenderer.invoke('check-license'),
+  getMachineId: () => ipcRenderer.invoke('get-machine-id'),
+  activateLicense: (key) => ipcRenderer.invoke('activate-license', key),
 });

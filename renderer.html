@@ -241,6 +241,25 @@
   </style>
 </head>
 <body>
+  <!-- License Dialog Overlay -->
+  <div id="licenseOverlay" class="license-overlay">
+    <div class="license-dialog">
+      <h2>🔐 ยืนยันสิทธิ์การใช้งาน</h2>
+      <div id="licenseStatus"></div>
+      <p><strong>Machine ID ของคุณ:</strong></p>
+      <div class="machine-id" id="machineId">กำลังโหลด...</div>
+      <p>กรุณากรอก License Key:</p>
+      <input type="text" id="licenseKeyInput" placeholder="กรอก License Key ที่ได้รับจากผู้พัฒนา">
+      <button id="activateButton">ยืนยัน License</button>
+      <div id="licenseError" class="error"></div>
+      <p style="font-size:12px; margin-top:15px; color:#999;">
+        ติดต่อผู้พัฒนาเพื่อซื้อ License:<br>
+        📧 Email: your@email.com<br>
+        📱 Line: @yourline
+      </p>
+    </div>
+  </div>
+
   <div class="container">
     <div class="header">
       <h1>🎬 Loop Video to Audio</h1>
