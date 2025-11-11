@@ -23,6 +23,7 @@
       "preload.js",
       "renderer.js",
       "renderer.html",
+      "license.js",
       "package.json"
     ],
     "extraResources": [
@@ -49,6 +50,16 @@
       {
         "from": "node_modules/@ffprobe-installer/darwin-arm64",
         "to": "ffprobe-arm64",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@ffmpeg-installer/win32-x64",
+        "to": "ffmpeg",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/win32-x64",
+        "to": "ffprobe",
         "filter": ["**/*"]
       }
     ],

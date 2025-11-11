@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>License Key Generator - Loop Video to Audio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 900px;
+      width: 100%;
+      padding: 40px;
+    }
+    h1 {
+      color: #2d3748;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #4a5568;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+    button {
+      flex: 1;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      background: #48bb78;
+      color: white;
+    }
+    .btn-secondary:hover {
+      background: #38a169;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+    }
+    .btn-danger {
+      background: #f56565;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #e53e3e;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .status {
+      background: #edf2f7;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .keys-output {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      display: none;
+    }
+    .keys-output.show {
+      display: block;
+    }
+    .key-item {
+      padding: 8px;
+      margin: 4px 0;
+      background: #1a202c;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .key-item:hover {
+      background: #4a5568;
+    }
+    .copy-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .copy-btn:hover {
+      background: #5568d3;
+    }
+    .progress {
+      margin: 20px 0;
+      display: none;
+    }
+    .progress.show {
+      display: block;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .progress-text {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .warning {
+      background: #fff5f5;
+      border-left: 4px solid #f56565;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #c53030;
+    }
+    .info {
+      background: #ebf8ff;
+      border-left: 4px solid #4299e1;
+      padding: 12px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #2c5282;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔑 License Key Generator</h1>
+    <p class="subtitle">Loop Video to Audio - Admin Tool</p>
+
+    <div class="warning">
+      <strong>⚠️ คำเตือน:</strong> เก็บไฟล์นี้เป็นความลับ! อย่าแชร์ SECRET_KEY ให้ใครเพื่อป้องกันการปลอม License
+    </div>
+
+    <div class="info">
+      <strong>📋 วิธีใช้งาน:</strong><br>
+      1. ใส่ Firebase Config (ได้จาก Firebase Console > Project Settings)<br>
+      2. ใส่ SECRET_KEY (ต้องตรงกับใน license.js)<br>
+      3. กำหนดจำนวน License Keys ที่ต้องการสร้าง<br>
+      4. คลิก "สร้าง License Keys" → จะได้ไฟล์ JSON สำหรับ backup<br>
+      5. คลิก "อัปโหลดไป Firebase" → อัปโหลด keys ไปยัง database
+    </div>
+
+    <div class="form-group">
+      <label>Firebase Project ID:</label>
+      <input type="text" id="projectId" placeholder="your-project-id">
+    </div>
+
+    <div class="form-group">
+      <label>Firebase API Key:</label>
+      <input type="text" id="apiKey" placeholder="AIzaSy...">
+    </div>
+
+    <div class="form-group">
+      <label>SECRET_KEY (ต้องตรงกับใน license.js):</label>
+      <input type="password" id="secretKey" value="YOUR-SECRET-KEY-CHANGE-THIS-2024">
+    </div>
+
+    <div class="form-group">
+      <label>จำนวน License Keys:</label>
+      <input type="number" id="count" value="5000" min="1" max="50000">
+    </div>
+
+    <div class="buttons">
+      <button class="btn-primary" id="generateBtn">🎲 สร้าง License Keys</button>
+      <button class="btn-secondary" id="uploadBtn" disabled>☁️ อัปโหลดไป Firebase</button>
+      <button class="btn-secondary" id="downloadBtn" disabled>💾 ดาวน์โหลด JSON</button>
+    </div>
+
+    <div class="status" id="status">
+      <strong>สถานะ:</strong> พร้อมใช้งาน
+    </div>
+
+    <div class="progress" id="progress">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text" id="progressText">0%</div>
+    </div>
+
+    <div class="keys-output" id="keysOutput"></div>
+  </div>
+
+  <script type="module">
+    let generatedLicenses = {};
+    let generatedKeys = [];
+
+    // HMAC-SHA256 implementation
+    async function hmacSHA256(message, key) {
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(key);
+      const messageData = encoder.encode(message);
+
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+
+      const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+      return Array.from(new Uint8Array(signature))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+
+    // Generate random string
+    function randomString(length) {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      const array = new Uint8Array(length);
+      crypto.getRandomValues(array);
+      for (let i = 0; i < length; i++) {
+        result += chars.charAt(array[i] % chars.length);
+      }
+      return result;
+    }
+
+    // Generate license key
+    async function generateLicenseKey(secretKey) {
+      const randomPart = randomString(20);
+      const signature = await hmacSHA256(randomPart, secretKey);
+      const signaturePart = signature.substring(0, 4).toUpperCase();
+      const fullKey = randomPart + signaturePart;
+
+      // Format: XXXX-XXXX-XXXX-XXXX-XXXX-XXXX
+      return fullKey.match(/.{1,4}/g).join('-');
+    }
+
+    // Update status
+    function updateStatus(message, isError = false) {
+      const status = document.getElementById('status');
+      status.innerHTML = `<strong>สถานะ:</strong> ${message}`;
+      status.style.background = isError ? '#fff5f5' : '#edf2f7';
+      status.style.borderLeft = isError ? '4px solid #f56565' : 'none';
+    }
+
+    // Update progress
+    function updateProgress(current, total) {
+      const progress = document.getElementById('progress');
+      const fill = document.getElementById('progressFill');
+      const text = document.getElementById('progressText');
+
+      const percent = Math.round((current / total) * 100);
+      progress.classList.add('show');
+      fill.style.width = percent + '%';
+      text.textContent = `${percent}% (${current.toLocaleString()}/${total.toLocaleString()})`;
+
+      if (current >= total) {
+        setTimeout(() => {
+          progress.classList.remove('show');
+        }, 2000);
+      }
+    }
+
+    // Generate multiple licenses
+    document.getElementById('generateBtn').addEventListener('click', async () => {
+      const count = parseInt(document.getElementById('count').value);
+      const secretKey = document.getElementById('secretKey').value;
+
+      if (!secretKey) {
+        updateStatus('❌ กรุณาใส่ SECRET_KEY', true);
+        return;
+      }
+
+      if (count < 1 || count > 50000) {
+        updateStatus('❌ จำนวนต้องอยู่ระหว่าง 1-50,000', true);
+        return;
+      }
+
+      const generateBtn = document.getElementById('generateBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
+      const downloadBtn = document.getElementById('downloadBtn');
+
+      generateBtn.disabled = true;
+      updateStatus('🎲 กำลังสร้าง license keys...');
+
+      generatedLicenses = {};
+      generatedKeys = [];
+      const uniqueKeys = new Set();
+
+      try {
+        while (generatedKeys.length < count) {
+          const key = await generateLicenseKey(secretKey);
+
+          if (!uniqueKeys.has(key)) {
+            uniqueKeys.add(key);
+            generatedKeys.push(key);
+
+            const firebaseKey = key.replace(/-/g, '_');
+            generatedLicenses[firebaseKey] = {
+              status: 'available',
+              created: new Date().toISOString(),
+              activated: null,
+              machineId: null,
+              machineName: null,
+              lastCheck: null
+            };
+
+            if (generatedKeys.length % 100 === 0) {
+              updateProgress(generatedKeys.length, count);
+              // Allow UI to update
+              await new Promise(resolve => setTimeout(resolve, 0));
+            }
+          }
+        }
+
+        updateProgress(count, count);
+        updateStatus(`✅ สร้าง ${count.toLocaleString()} license keys สำเร็จ!`);
+
+        // Display keys
+        const output = document.getElementById('keysOutput');
+        output.innerHTML = generatedKeys
+          .slice(0, 100) // Show first 100
+          .map(key => `
+            <div class="key-item">
+              <span>${key}</span>
+              <button class="copy-btn" onclick="navigator.clipboard.writeText('${key}')">Copy</button>
+            </div>
+          `).join('');
+
+        if (count > 100) {
+          output.innerHTML += `<div style="padding:12px; text-align:center; color:#a0aec0;">
+            แสดง 100 keys แรก (ทั้งหมด ${count.toLocaleString()} keys)<br>
+            คลิก "ดาวน์โหลด JSON" เพื่อดู/บันทึกทั้งหมด
+          </div>`;
+        }
+        output.classList.add('show');
+
+        uploadBtn.disabled = false;
+        downloadBtn.disabled = false;
+
+      } catch (error) {
+        updateStatus('❌ เกิดข้อผิดพลาด: ' + error.message, true);
+      } finally {
+        generateBtn.disabled = false;
+      }
+    });
+
+    // Download JSON
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      const data = {
+        generated: new Date().toISOString(),
+        total: generatedKeys.length,
+        licenses: generatedLicenses
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `license_keys_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      updateStatus(`✅ ดาวน์โหลด ${generatedKeys.length.toLocaleString()} keys เป็นไฟล์ JSON แล้ว`);
+    });
+
+    // Upload to Firebase
+    document.getElementById('uploadBtn').addEventListener('click', async () => {
+      const projectId = document.getElementById('projectId').value;
+      const apiKey = document.getElementById('apiKey').value;
+
+      if (!projectId || !apiKey) {
+        updateStatus('❌ กรุณาใส่ Firebase Project ID และ API Key', true);
+        return;
+      }
+
+      const uploadBtn = document.getElementById('uploadBtn');
+      uploadBtn.disabled = true;
+
+      updateStatus('☁️ กำลังอัปโหลดไป Firebase...');
+
+      const dbUrl = `https://${projectId}-default-rtdb.firebaseio.com`;
+      const keys = Object.keys(generatedLicenses);
+      const batchSize = 100; // Firebase has limits
+      let uploaded = 0;
+
+      try {
+        for (let i = 0; i < keys.length; i += batchSize) {
+          const batch = keys.slice(i, i + batchSize);
+          const batchData = {};
+
+          batch.forEach(key => {
+            batchData[key] = generatedLicenses[key];
+          });
+
+          // Upload batch
+          const response = await fetch(`${dbUrl}/licenses.json?auth=${apiKey}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(batchData)
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+          }
+
+          uploaded += batch.length;
+          updateProgress(uploaded, keys.length);
+
+          // Rate limiting
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        updateStatus(`✅ อัปโหลด ${uploaded.toLocaleString()} license keys ไป Firebase สำเร็จ!`);
+
+      } catch (error) {
+        updateStatus('❌ อัปโหลดล้มเหลว: ' + error.message, true);
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
