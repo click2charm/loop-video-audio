@@ -35,23 +35,47 @@
         ]
       },
       {
-        "from": "node_modules/@ffmpeg-installer",
-        "to": "node_modules/@ffmpeg-installer",
+        "from": "node_modules/@ffmpeg-installer/darwin-x64",
+        "to": "ffmpeg",
         "filter": [
           "**/*"
         ]
       },
       {
-        "from": "node_modules/@ffprobe-installer",
-        "to": "node_modules/@ffprobe-installer",
+        "from": "node_modules/@ffmpeg-installer/darwin-arm64",
+        "to": "ffmpeg-arm64",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/darwin-x64",
+        "to": "ffprobe",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/darwin-arm64",
+        "to": "ffprobe-arm64",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/@ffmpeg-installer/win32-x64",
+        "to": "ffmpeg",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/@ffprobe-installer/win32-x64",
+        "to": "ffprobe",
         "filter": [
           "**/*"
         ]
       }
-    ],
-    "asarUnpack": [
-      "node_modules/@ffmpeg-installer/**/*",
-      "node_modules/@ffprobe-installer/**/*"
     ],
     "mac": {
       "category": "public.app-category.video",
