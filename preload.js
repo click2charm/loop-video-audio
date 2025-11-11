@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('api', {
   onProgress: (cb) => ipcRenderer.on('progress', (_e, data) => cb(data)),
   // License
   checkLicense: () => ipcRenderer.invoke('check-license'),
-  getMachineId: () => ipcRenderer.invoke('get-machine-id'),
   activateLicense: (key) => ipcRenderer.invoke('activate-license', key),
+  // External links
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
 });

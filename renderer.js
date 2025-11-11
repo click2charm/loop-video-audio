@@ -10,7 +10,6 @@ const progressStatus = document.getElementById('progressStatus');
 
 // License elements
 const licenseOverlay = document.getElementById('licenseOverlay');
-const machineIdEl = document.getElementById('machineId');
 const licenseStatusEl = document.getElementById('licenseStatus');
 const licenseKeyInput = document.getElementById('licenseKeyInput');
 const activateButton = document.getElementById('activateButton');
@@ -114,9 +113,6 @@ window.api.onProgress(updateProgress);
 window.addEventListener('DOMContentLoaded', async () => {
   try {
     const licenseStatus = await window.api.checkLicense();
-    const machineId = await window.api.getMachineId();
-
-    machineIdEl.textContent = machineId;
 
     if (!licenseStatus.isValid) {
       // Show license dialog - trial expired or no license

@@ -3,10 +3,58 @@ const os = require('os');
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 
-// Secret key for license encryption (เปลี่ยนเป็นของคุณเอง!)
+// ================== CONFIG ==================
+// Secret key สำหรับ validate license signature
 const LICENSE_SECRET = 'YOUR-SECRET-KEY-CHANGE-THIS-2024';
-const TRIAL_DAYS = 14; // Free trial period
+
+// Firebase Realtime Database URL
+// เปลี่ยนเป็น URL ของคุณ เช่น https://your-project-id-default-rtdb.firebaseio.com
+const FIREBASE_DB_URL = 'https://loop-video-audio-default-rtdb.firebaseio.com';
+
+// Trial settings
+const TRIAL_DAYS = 14;
+
+// ============================================
+
+// HTTPS request wrapper
+function httpsRequest(url, options = {}, data = null) {
+  return new Promise((resolve, reject) => {
+    const urlObj = new URL(url);
+    const reqOptions = {
+      hostname: urlObj.hostname,
+      port: 443,
+      path: urlObj.pathname + urlObj.search,
+      method: options.method || 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      }
+    };
+
+    const req = https.request(reqOptions, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          resolve(parsed);
+        } catch (e) {
+          resolve(body);
+        }
+      });
+    });
+
+    req.on('error', reject);
+
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+
+    req.end();
+  });
+}
 
 // Get unique machine ID
 function getMachineId() {
@@ -18,6 +66,11 @@ function getMachineId() {
   const machineInfo = `${hostname}-${platform}-${arch}`;
   const hash = crypto.createHash('sha256').update(machineInfo).digest('hex');
   return hash.substring(0, 16); // First 16 chars
+}
+
+// Get machine name for display
+function getMachineName() {
+  return `${os.hostname()} (${os.platform()})`;
 }
 
 // Get or create trial start date
@@ -59,68 +112,158 @@ function checkTrial() {
   };
 }
 
-// Generate license key (for your internal use to create licenses)
-// Set expiryDays to 0 for lifetime license
-function generateLicenseKey(machineId, expiryDays = 0) {
-  const expiryTimestamp = expiryDays === 0 ? 0 : (Date.now() + (expiryDays * 24 * 60 * 60 * 1000));
-  const data = `${machineId}:${expiryTimestamp}`;
-  const cipher = crypto.createCipher('aes-256-cbc', LICENSE_SECRET);
-  let encrypted = cipher.update(data, 'utf8', 'base64');
-  encrypted += cipher.final('base64');
+// Validate license key format (signature check)
+function validateLicenseKeyFormat(licenseKey) {
+  try {
+    const clean = licenseKey.replace(/-/g, '');
 
-  return encrypted.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    if (clean.length !== 24) {
+      return false;
+    }
+
+    const randomPart = clean.substring(0, 20);
+    const providedSignature = clean.substring(20, 24);
+
+    // คำนวณ signature ใหม่
+    const hmac = crypto.createHmac('sha256', LICENSE_SECRET);
+    hmac.update(randomPart);
+    const expectedSignature = hmac.digest('hex').substring(0, 4).toUpperCase();
+
+    return providedSignature === expectedSignature;
+  } catch (err) {
+    return false;
+  }
 }
 
-// Validate license key
-function validateLicenseKey(licenseKey) {
+// Fetch license data from Firebase
+async function fetchLicenseFromFirebase(licenseKey) {
   try {
-    // Restore base64 format
-    let key = licenseKey.replace(/-/g, '+').replace(/_/g, '/');
-    while (key.length % 4 !== 0) {
-      key += '=';
+    const firebaseKey = licenseKey.replace(/-/g, '_');
+    const url = `${FIREBASE_DB_URL}/licenses/${firebaseKey}.json`;
+
+    const data = await httpsRequest(url);
+
+    if (!data || data.error) {
+      return { error: 'License key ไม่พบในระบบ' };
     }
 
-    // Decrypt
-    const decipher = crypto.createDecipher('aes-256-cbc', LICENSE_SECRET);
-    let decrypted = decipher.update(key, 'base64', 'utf8');
-    decrypted += decipher.final('utf8');
+    return data;
+  } catch (err) {
+    return { error: 'ไม่สามารถเชื่อมต่อ server ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต' };
+  }
+}
 
-    // Parse data
-    const [storedMachineId, expiryTimestamp] = decrypted.split(':');
+// Activate license (bind to machine)
+async function activateLicenseOnFirebase(licenseKey, machineId, machineName) {
+  try {
+    const firebaseKey = licenseKey.replace(/-/g, '_');
+    const url = `${FIREBASE_DB_URL}/licenses/${firebaseKey}.json`;
+
+    const updateData = {
+      status: 'activated',
+      activated: new Date().toISOString(),
+      machineId: machineId,
+      machineName: machineName,
+      lastCheck: new Date().toISOString()
+    };
+
+    // Update using PATCH
+    const result = await httpsRequest(url, { method: 'PATCH' }, updateData);
+
+    if (result.error) {
+      return { error: 'ไม่สามารถเปิดใช้งาน license ได้' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    return { error: 'ไม่สามารถเชื่อมต่อ server ได้' };
+  }
+}
+
+// Update last check time
+async function updateLastCheck(licenseKey) {
+  try {
+    const firebaseKey = licenseKey.replace(/-/g, '_');
+    const url = `${FIREBASE_DB_URL}/licenses/${firebaseKey}/lastCheck.json`;
+
+    await httpsRequest(url, { method: 'PUT' }, new Date().toISOString());
+  } catch (err) {
+    // Ignore error - not critical
+  }
+}
+
+// Validate license key (online)
+async function validateLicenseKey(licenseKey) {
+  try {
+    // 1. Check format & signature
+    if (!validateLicenseKeyFormat(licenseKey)) {
+      return { valid: false, error: 'License key รูปแบบไม่ถูกต้อง' };
+    }
+
+    // 2. Fetch from Firebase
+    const licenseData = await fetchLicenseFromFirebase(licenseKey);
+
+    if (licenseData.error) {
+      return { valid: false, error: licenseData.error };
+    }
+
+    // 3. Check status
+    if (licenseData.status !== 'available' && licenseData.status !== 'activated') {
+      return { valid: false, error: 'License key ถูกยกเลิกแล้ว' };
+    }
+
     const currentMachineId = getMachineId();
-    const currentTime = Date.now();
 
-    // Check machine ID match
-    if (storedMachineId !== currentMachineId) {
-      return { valid: false, error: 'License key ไม่ตรงกับเครื่องนี้' };
-    }
+    // 4. If already activated, check machine ID
+    if (licenseData.status === 'activated') {
+      if (licenseData.machineId !== currentMachineId) {
+        return {
+          valid: false,
+          error: `License key ถูกใช้งานแล้วบนเครื่อง: ${licenseData.machineName || 'อื่น'}`
+        };
+      }
 
-    // Check if lifetime license (expiryTimestamp === '0')
-    const expiry = parseInt(expiryTimestamp);
-    if (expiry === 0) {
+      // Update last check
+      await updateLastCheck(licenseKey);
+
       return {
         valid: true,
         isLifetime: true,
         machineId: currentMachineId,
-        expiryDate: 'ตลอดชีพ (Lifetime)'
+        expiryDate: 'ตลอดชีพ (Lifetime)',
+        activated: licenseData.activated
       };
     }
 
-    // Check expiry for time-limited licenses
-    if (expiry < currentTime) {
-      return { valid: false, error: 'License key หมดอายุแล้ว' };
+    // 5. If available, need to activate first
+    if (licenseData.status === 'available') {
+      // Activate now
+      const activateResult = await activateLicenseOnFirebase(
+        licenseKey,
+        currentMachineId,
+        getMachineName()
+      );
+
+      if (activateResult.error) {
+        return { valid: false, error: activateResult.error };
+      }
+
+      // Save license locally
+      saveLicense(licenseKey);
+
+      return {
+        valid: true,
+        isLifetime: true,
+        machineId: currentMachineId,
+        expiryDate: 'ตลอดชีพ (Lifetime)',
+        justActivated: true
+      };
     }
 
-    const expiryDate = new Date(expiry);
-    return {
-      valid: true,
-      isLifetime: false,
-      machineId: currentMachineId,
-      expiryDate: expiryDate.toLocaleDateString('th-TH')
-    };
+    return { valid: false, error: 'สถานะ license ไม่ถูกต้อง' };
 
   } catch (err) {
-    return { valid: false, error: 'License key ไม่ถูกต้อง' };
+    return { valid: false, error: 'เกิดข้อผิดพลาด: ' + err.message };
   }
 }
 
@@ -146,11 +289,12 @@ function loadLicense() {
 }
 
 // Check if app is licensed (trial or valid license)
-function checkLicense() {
+async function checkLicense() {
   const licenseKey = loadLicense();
 
   if (licenseKey) {
-    const result = validateLicenseKey(licenseKey);
+    // Validate online
+    const result = await validateLicenseKey(licenseKey);
     if (result.valid) {
       return result;
     }
@@ -162,11 +306,10 @@ function checkLicense() {
 
 module.exports = {
   getMachineId,
-  generateLicenseKey,
+  getMachineName,
   validateLicenseKey,
   saveLicense,
   loadLicense,
   checkLicense,
   checkTrial
 };
-

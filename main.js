@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -236,20 +236,20 @@ ipcMain.handle('pick-logo', async () => {
 });
 
 // ---------- License System ----------
+// License IPC handlers
 ipcMain.handle('check-license', async () => {
-  return license.checkLicense();
-});
-
-ipcMain.handle('get-machine-id', async () => {
-  return license.getMachineId();
+  return await license.checkLicense();
 });
 
 ipcMain.handle('activate-license', async (_e, licenseKey) => {
-  const result = license.validateLicenseKey(licenseKey);
-  if (result.valid) {
-    license.saveLicense(licenseKey);
-  }
+  const result = await license.validateLicenseKey(licenseKey);
+  // Note: validateLicenseKey now automatically saves if valid
   return result;
+});
+
+// Open external links
+ipcMain.handle('open-external', async (_e, url) => {
+  await shell.openExternal(url);
 });
 
 ipcMain.handle('merge-and-loop', async (_e, payload) => {
