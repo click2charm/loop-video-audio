@@ -34,30 +34,16 @@
           "**/*"
         ]
       },
-      {
-        "from": "node_modules/@ffmpeg-installer/darwin-x64/ffmpeg",
-        "to": "ffmpeg/ffmpeg"
-      },
-      {
-        "from": "node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg",
-        "to": "ffmpeg-arm64/ffmpeg"
-      },
-      {
-        "from": "node_modules/@ffprobe-installer/darwin-x64/ffprobe",
-        "to": "ffprobe/ffprobe"
-      },
-      {
-        "from": "node_modules/@ffprobe-installer/darwin-arm64/ffprobe",
-        "to": "ffprobe-arm64/ffprobe"
-      },
-      {
-        "from": "node_modules/@ffmpeg-installer/win32-x64/ffmpeg.exe",
-        "to": "ffmpeg/ffmpeg.exe"
-      },
-      {
-        "from": "node_modules/@ffprobe-installer/win32-x64/ffprobe.exe",
-        "to": "ffprobe/ffprobe.exe"
-      }
+      "node_modules/@ffmpeg-installer/darwin-x64",
+      "node_modules/@ffmpeg-installer/darwin-arm64",
+      "node_modules/@ffprobe-installer/darwin-x64",
+      "node_modules/@ffprobe-installer/darwin-arm64",
+      "node_modules/@ffmpeg-installer/win32-x64",
+      "node_modules/@ffprobe-installer/win32-x64"
+    ],
+    "asarUnpack": [
+      "**/@ffmpeg-installer/**",
+      "**/@ffprobe-installer/**"
     ],
     "mac": {
       "category": "public.app-category.video",
