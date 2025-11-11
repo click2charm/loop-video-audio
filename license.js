@@ -10,8 +10,7 @@ const https = require('https');
 const LICENSE_SECRET = 'YOUR-SECRET-KEY-CHANGE-THIS-2024';
 
 // Firebase Realtime Database URL
-// เปลี่ยนเป็น URL ของคุณ เช่น https://your-project-id-default-rtdb.firebaseio.com
-const FIREBASE_DB_URL = 'https://loop-video-audio-default-rtdb.firebaseio.com';
+const FIREBASE_DB_URL = 'https://loop-video-to-audio-default-rtdb.firebaseio.com';
 
 // Trial settings
 const TRIAL_DAYS = 14;

@@ -5,3 +5,7 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Firebase & License Keys (sensitive data)
+firebase-admin-key.json
+license_keys.json
