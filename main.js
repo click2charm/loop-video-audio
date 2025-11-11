@@ -17,19 +17,18 @@ if (app.isPackaged) {
   const resourcesPath = process.resourcesPath;
 
   if (platform === 'win32') {
-    // Windows: use win32-x64 binaries with .exe extension
-    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg.exe');
-    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe.exe');
+    // Windows: binaries in node_modules structure
+    ffmpegPath = path.join(resourcesPath, 'node_modules', '@ffmpeg-installer', 'win32-x64', 'ffmpeg.exe');
+    ffprobePath = path.join(resourcesPath, 'node_modules', '@ffprobe-installer', 'win32-x64', 'ffprobe.exe');
   } else if (platform === 'darwin') {
     // macOS: use darwin-x64 or darwin-arm64
-    const ffmpegFolder = arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg';
-    const ffprobeFolder = arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe';
-    ffmpegPath = path.join(resourcesPath, ffmpegFolder, 'ffmpeg');
-    ffprobePath = path.join(resourcesPath, ffprobeFolder, 'ffprobe');
+    const archFolder = arch === 'arm64' ? 'darwin-arm64' : 'darwin-x64';
+    ffmpegPath = path.join(resourcesPath, 'node_modules', '@ffmpeg-installer', archFolder, 'ffmpeg');
+    ffprobePath = path.join(resourcesPath, 'node_modules', '@ffprobe-installer', archFolder, 'ffprobe');
   } else {
     // Linux or other
-    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg');
-    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe');
+    ffmpegPath = path.join(resourcesPath, 'node_modules', '@ffmpeg-installer', 'linux-x64', 'ffmpeg');
+    ffprobePath = path.join(resourcesPath, 'node_modules', '@ffprobe-installer', 'linux-x64', 'ffprobe');
   }
 } else {
   ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
