@@ -48,7 +48,6 @@ jobs:
       - name: Build macOS (Apple Silicon arm64)
         if: runner.os == 'macOS'
         run: |
-          npm install @ffmpeg-installer/ffmpeg @ffprobe-installer/ffprobe --force
           npm run dist:mac -- --arm64
 
       # ---------- Windows ----------
