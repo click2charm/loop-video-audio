@@ -121,7 +121,7 @@ async function uploadToFirebase(licenses) {
     // Initialize Firebase Admin
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      databaseURL: serviceAccount.databaseURL || `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`
+      databaseURL: serviceAccount.databaseURL || `https://${serviceAccount.project_id}-default-rtdb.asia-southeast1.firebasedatabase.app`
     });
 
     const db = admin.database();

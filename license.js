@@ -10,7 +10,7 @@ const https = require('https');
 const LICENSE_SECRET = 'YOUR-SECRET-KEY-CHANGE-THIS-2024';
 
 // Firebase Realtime Database URL
-const FIREBASE_DB_URL = 'https://loop-video-to-audio-default-rtdb.firebaseio.com';
+const FIREBASE_DB_URL = 'https://loop-video-to-audio-default-rtdb.asia-southeast1.firebasedatabase.app';
 
 // Trial settings
 const TRIAL_DAYS = 14;

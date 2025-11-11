@@ -14,7 +14,7 @@ const licenses = licenseData.licenses;
 
 // Firebase config
 const PROJECT_ID = 'loop-video-to-audio';
-const DB_URL = `https://${PROJECT_ID}-default-rtdb.firebaseio.com`;
+const DB_URL = `https://${PROJECT_ID}-default-rtdb.asia-southeast1.firebasedatabase.app`;
 
 // You need to get Web API Key from Firebase Console
 // Go to: Project Settings > General > Web API Key
