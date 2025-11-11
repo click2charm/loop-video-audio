@@ -6,6 +6,7 @@ const os = require('os');
 
 // Determine architecture and paths
 const arch = os.arch(); // 'x64' or 'arm64'
+const platform = os.platform(); // 'darwin', 'win32', 'linux'
 
 // In packaged app, ffmpeg/ffprobe are in Resources folder
 // In development, use the npm packages
@@ -13,11 +14,22 @@ let ffmpegPath, ffprobePath;
 
 if (app.isPackaged) {
   const resourcesPath = process.resourcesPath;
-  const ffmpegFolder = arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg';
-  const ffprobeFolder = arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe';
 
-  ffmpegPath = path.join(resourcesPath, ffmpegFolder, 'ffmpeg');
-  ffprobePath = path.join(resourcesPath, ffprobeFolder, 'ffprobe');
+  if (platform === 'win32') {
+    // Windows: use win32-x64 binaries with .exe extension
+    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg.exe');
+    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe.exe');
+  } else if (platform === 'darwin') {
+    // macOS: use darwin-x64 or darwin-arm64
+    const ffmpegFolder = arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg';
+    const ffprobeFolder = arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe';
+    ffmpegPath = path.join(resourcesPath, ffmpegFolder, 'ffmpeg');
+    ffprobePath = path.join(resourcesPath, ffprobeFolder, 'ffprobe');
+  } else {
+    // Linux or other
+    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg');
+    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe');
+  }
 } else {
   ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
   ffprobePath = require('@ffprobe-installer/ffprobe').path;
@@ -84,10 +96,28 @@ function runFFmpeg(args, totalDuration = 0, statusMessage = '') {
     if (!ffmpegPath) return reject(new Error('ไม่พบ ffmpeg-static'));
     const proc = spawn(ffmpegPath, args, { windowsHide: true });
 
-    proc.stdout.on('data', d => win?.webContents.send('ffmpeg-log', d.toString()));
+    let lastProgressTime = Date.now();
+    let heartbeatInterval = null;
+
+    // Send heartbeat every 5 seconds to show process is still alive
+    if (totalDuration > 0) {
+      heartbeatInterval = setInterval(() => {
+        const timeSinceLastProgress = Date.now() - lastProgressTime;
+        if (timeSinceLastProgress > 5000) {
+          // No progress update for 5+ seconds, send keepalive
+          win?.webContents.send('ffmpeg-log', `[กำลังทำงาน... (${Math.floor(timeSinceLastProgress/1000)}s)]\n`);
+        }
+      }, 5000);
+    }
+
+    proc.stdout.on('data', d => {
+      lastProgressTime = Date.now();
+      win?.webContents.send('ffmpeg-log', d.toString());
+    });
 
     proc.stderr.on('data', d => {
       const line = d.toString();
+      lastProgressTime = Date.now();
       win?.webContents.send('ffmpeg-log', line);
 
       // Parse progress from FFmpeg output
@@ -106,8 +136,15 @@ function runFFmpeg(args, totalDuration = 0, statusMessage = '') {
       }
     });
 
-    proc.on('error', reject);
-    proc.on('close', code => code === 0 ? resolve() : reject(new Error(`FFmpeg exited ${code}`)));
+    proc.on('error', (err) => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      reject(err);
+    });
+
+    proc.on('close', code => {
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      code === 0 ? resolve() : reject(new Error(`FFmpeg exited ${code}`));
+    });
   });
 }
 function posExpr(anchor) {
@@ -220,25 +257,48 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
 
     // 1) รวมวิดีโอถ้ามีหลายไฟล์
     let videoPath = videoFiles[0];
-    const isImage = /\.(png|jpe?g)$/i.test(videoPath);
 
-    if (videoFiles.length > 1 && !isImage) {
+    // Check if all files are images
+    const allImages = videoFiles.every(f => /\.(png|jpe?g)$/i.test(f));
+    const hasMultipleFiles = videoFiles.length > 1;
+
+    if (hasMultipleFiles && !allImages) {
       win?.webContents.send('progress', { percent: 0, status: 'กำลังต่อวิดีโอหลายไฟล์...' });
+
+      // If there are mixed files (images + videos), convert images to video first
+      const processedFiles = [];
+      for (const file of videoFiles) {
+        const isImage = /\.(png|jpe?g)$/i.test(file);
+        if (isImage) {
+          // Convert image to 5-second video
+          const tempVideo = path.join(tmp, `img_${Date.now()}_${processedFiles.length}.mp4`);
+          await runFFmpeg(
+            ['-loop', '1', '-i', file, '-t', '5', '-pix_fmt', 'yuv420p', '-vf', 'fps=25', tempVideo],
+            5,
+            'กำลังแปลงรูปภาพเป็นวิดีโอ...'
+          );
+          processedFiles.push(tempVideo);
+        } else {
+          processedFiles.push(file);
+        }
+      }
 
       // Create concat list file
       const videoListPath = path.join(tmp, `video_list_${Date.now()}.txt`);
-      const videoListContent = videoFiles.map(p => `file '${p.replace(/'/g, `'\\''`)}'`).join('\n');
+      const videoListContent = processedFiles.map(p => `file '${p.replace(/'/g, `'\\''`)}'`).join('\n');
       fs.writeFileSync(videoListPath, videoListContent, 'utf8');
 
-      // Concatenate videos
+      // Concatenate videos (re-encode to ensure compatibility)
       const concatenatedVideo = path.join(tmp, `concatenated_${Date.now()}.mp4`);
       await runFFmpeg(
-        ['-f', 'concat', '-safe', '0', '-i', videoListPath, '-c', 'copy', concatenatedVideo],
+        ['-f', 'concat', '-safe', '0', '-i', videoListPath, '-c:v', 'libx264', '-preset', 'fast', '-crf', '23', '-c:a', 'aac', concatenatedVideo],
         0,
         'กำลังต่อวิดีโอหลายไฟล์...'
       );
       videoPath = concatenatedVideo;
     }
+
+    const isImage = allImages;
 
     // 2) รวมเสียงถ้ามีหลายไฟล์
     let mergedAudio = audioFiles[0];
@@ -361,6 +421,13 @@ ipcMain.handle('merge-and-loop', async (_e, payload) => {
     }
 
     args.push(outputPath);
+
+    // Warn user if video is very long (> 30 minutes)
+    if (audioDuration > 1800) {
+      const minutes = Math.round(audioDuration / 60);
+      win?.webContents.send('ffmpeg-log', `\n⚠️ คำเตือน: วิดีโอยาว ${minutes} นาที อาจใช้เวลาประมวลผลนาน 10-30 นาที\n`);
+      win?.webContents.send('ffmpeg-log', `กรุณาอย่าปิดโปรแกรม กำลังประมวลผล...\n\n`);
+    }
 
     win?.webContents.send('progress', { percent: 0, status: 'กำลังสร้างวิดีโอ...' });
     await runFFmpeg(args, audioDuration, 'กำลังสร้างวิดีโอ...');
