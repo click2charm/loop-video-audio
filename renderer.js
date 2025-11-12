@@ -8,12 +8,58 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 const progressStatus = document.getElementById('progressStatus');
 
+// Log buffering for performance
+let logBuffer = [];
+let logUpdateTimer = null;
+const MAX_LOG_LINES = 1000;
+const LOG_UPDATE_INTERVAL = 100; // Update every 100ms
+
 function renderSel(){
   sel.textContent = JSON.stringify({ videoFiles, audioFiles, outputPath, logoPath }, null, 2);
 }
+
 function appendLog(line){
   log.textContent += line + '\n';
-  log.scrollTop = log.scrollHeight;
+  // Check if user is at bottom before auto-scrolling
+  const isAtBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 50;
+  if (isAtBottom) {
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function flushLogBuffer() {
+  if (logBuffer.length === 0) return;
+
+  // Combine all buffered lines
+  const newContent = logBuffer.join('');
+  logBuffer = [];
+
+  // Add to log element
+  log.textContent += newContent;
+
+  // Limit total lines to prevent memory issues
+  const lines = log.textContent.split('\n');
+  if (lines.length > MAX_LOG_LINES) {
+    log.textContent = lines.slice(-MAX_LOG_LINES).join('\n');
+  }
+
+  // Auto-scroll only if user is near bottom
+  const isAtBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 50;
+  if (isAtBottom) {
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function bufferLog(line) {
+  logBuffer.push(line);
+
+  // Schedule flush if not already scheduled
+  if (!logUpdateTimer) {
+    logUpdateTimer = setTimeout(() => {
+      flushLogBuffer();
+      logUpdateTimer = null;
+    }, LOG_UPDATE_INTERVAL);
+  }
 }
 function updateProgress(data){
   const { percent = 0, status = '', currentTime = 0, totalDuration = 0 } = data;
@@ -184,10 +230,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     appendLog('ลบโลโก้แล้ว');
   });
 
-  // FFmpeg logs
+  // FFmpeg logs - use buffering for better performance
   window.api.onFfmpegLog((line) => {
-    log.textContent += line;
-    log.scrollTop = log.scrollHeight;
+    bufferLog(line);
   });
 
   // Progress updates
