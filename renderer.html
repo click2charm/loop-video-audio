@@ -11,6 +11,73 @@
       padding: 20px;
       min-height: 100vh;
     }
+    .license-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .license-dialog {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      max-width: 500px;
+      width: 90%;
+    }
+    .license-dialog h2 {
+      color: #667eea;
+      margin-bottom: 20px;
+    }
+    .license-dialog p {
+      margin-bottom: 15px;
+      color: #555;
+      line-height: 1.6;
+    }
+    .license-dialog input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 15px;
+      font-family: monospace;
+    }
+    .license-dialog .machine-id {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #666;
+      word-break: break-all;
+      margin-bottom: 15px;
+    }
+    .license-dialog button {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .license-dialog button:hover {
+      opacity: 0.9;
+    }
+    .license-dialog .error {
+      color: #f5576c;
+      font-size: 14px;
+      margin-top: 10px;
+    }
     .container {
       max-width: 1000px;
       margin: 0 auto;
@@ -174,6 +241,32 @@
   </style>
 </head>
 <body>
+  <!-- License Dialog Overlay -->
+  <div id="licenseOverlay" class="license-overlay">
+    <div class="license-dialog">
+      <h2>🔐 ยืนยันสิทธิ์การใช้งาน</h2>
+      <div id="licenseStatus"></div>
+      <p style="margin-top:20px;"><strong>กรอก License Key:</strong></p>
+      <input type="text" id="licenseKeyInput" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
+      <button id="activateButton">เปิดใช้งาน License</button>
+      <div id="licenseError" class="error"></div>
+      <div style="margin-top:20px; padding:15px; background:#f7fafc; border-radius:8px; text-align:center;">
+        <p style="font-size:14px; color:#4a5568; margin:0 0 10px 0;">
+          <strong>ยังไม่มี License Key?</strong>
+        </p>
+        <a href="https://www.facebook.com/promptmuseautomate"
+           style="display:inline-block; padding:10px 20px; background:#667eea; color:white; text-decoration:none; border-radius:6px; font-weight:600; margin-bottom:10px;"
+           onclick="window.api.openExternal('https://www.facebook.com/promptmuseautomate'); return false;">
+          🛒 สั่งซื้อ License Key
+        </a>
+        <p style="font-size:12px; color:#718096; margin:10px 0 0 0; line-height:1.6;">
+          📘 Facebook: facebook.com/promptmuseautomate<br>
+          💬 Line ID: @xmz6911f
+        </p>
+      </div>
+    </div>
+  </div>
+
   <div class="container">
     <div class="header">
       <h1>🎬 Loop Video to Audio</h1>
