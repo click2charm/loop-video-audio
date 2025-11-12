@@ -26,10 +26,6 @@
       "license.js",
       "package.json"
     ],
-    "asarUnpack": [
-      "**/ffmpeg*",
-      "**/ffprobe*"
-    ],
     "extraResources": [
       {
         "from": "assets/",
@@ -41,11 +37,17 @@
       "category": "public.app-category.video",
       "target": [{"target": "dmg"}],
       "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "files": [
-        "node_modules/@ffmpeg-installer/ffmpeg/**/*",
-        "node_modules/@ffmpeg-installer/darwin-${arch}/**/*",
-        "node_modules/@ffprobe-installer/ffprobe/**/*",
-        "node_modules/@ffprobe-installer/darwin-${arch}/**/*"
+      "extraResources": [
+        {
+          "from": "node_modules/@ffmpeg-installer/darwin-${arch}",
+          "to": "ffmpeg",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "node_modules/@ffprobe-installer/darwin-${arch}",
+          "to": "ffprobe",
+          "filter": ["**/*"]
+        }
       ]
     },
     "dmg": {
@@ -69,11 +71,17 @@
           "arch": ["x64"]
         }
       ],
-      "files": [
-        "node_modules/@ffmpeg-installer/ffmpeg/**/*",
-        "node_modules/@ffmpeg-installer/win32-x64/**/*",
-        "node_modules/@ffprobe-installer/ffprobe/**/*",
-        "node_modules/@ffprobe-installer/win32-x64/**/*"
+      "extraResources": [
+        {
+          "from": "node_modules/@ffmpeg-installer/win32-x64",
+          "to": "ffmpeg",
+          "filter": ["**/*"]
+        },
+        {
+          "from": "node_modules/@ffprobe-installer/win32-x64",
+          "to": "ffprobe",
+          "filter": ["**/*"]
+        }
       ]
     },
     "nsis": {
