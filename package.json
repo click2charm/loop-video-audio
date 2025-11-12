@@ -15,7 +15,6 @@
   "build": {
     "appId": "com.preecha.loopvideoaudio",
     "productName": "Loop Video to Audio",
-    "afterPack": "./scripts/afterPack.js",
     "directories": {
       "output": "dist"
     },
@@ -24,8 +23,7 @@
       "preload.js",
       "renderer.js",
       "renderer.html",
-      "package.json",
-      "scripts/**/*"
+      "package.json"
     ],
     "extraResources": [
       {
