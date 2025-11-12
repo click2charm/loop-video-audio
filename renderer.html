@@ -244,7 +244,10 @@
   <!-- License Dialog Overlay -->
   <div id="licenseOverlay" class="license-overlay">
     <div class="license-dialog">
-      <h2>🔐 ยืนยันสิทธิ์การใช้งาน</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h2 style="margin: 0;">🔐 ยืนยันสิทธิ์การใช้งาน</h2>
+        <button id="closeLicenseDialog" style="width: auto; padding: 6px 12px; background: #e0e0e0; color: #666; font-size: 14px;">ปิด</button>
+      </div>
       <div id="licenseStatus"></div>
       <p style="margin-top:20px;"><strong>กรอก License Key:</strong></p>
       <input type="text" id="licenseKeyInput" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" style="font-family: 'Courier New', monospace; letter-spacing: 1px;">
@@ -268,9 +271,12 @@
   </div>
 
   <div class="container">
-    <div class="header">
+    <div class="header" style="position: relative;">
       <h1>🎬 Loop Video to Audio</h1>
       <div class="subtitle">สร้างวิดีโอแบบวนซ้ำพร้อมเสียงและข้อความได้อย่างง่ายดาย</div>
+      <button id="manageLicenseBtn" style="position: absolute; top: 20px; right: 20px; padding: 8px 16px; background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.5); border-radius: 6px; cursor: pointer; font-size: 14px;">
+        🔑 จัดการ License
+      </button>
       <div class="developer-info">
         <div>📚 รวมคอร์สเรียนหาเงินออนไลน์ <a href="https://wfhiseasy.com" target="_blank">WFH IS EASY</a></div>
         <div>🎵 โปรแกรมสร้างเพลงด้วย AI หารายได้บนยูทูป <a href="https://www.facebook.com/promptmuseautomate" target="_blank">Prompt Muse Automated</a></div>
@@ -353,7 +359,7 @@
 
         <div class="row">
           <label>ข้อความเดี่ยว (โหมดปกติ):</label>
-          <input id="txtOverlay" type="text" placeholder="จะไม่ใช้เมื่อเปิดโหมดจัดกลาง" style="width:250px;">
+          <input id="overlayText" type="text" placeholder="จะไม่ใช้เมื่อเปิดโหมดจัดกลาง" style="width:250px;">
           <label>ตำแหน่ง:</label>
           <select id="textPos">
             <option value="br">ขวาล่าง</option>
@@ -367,7 +373,8 @@
 
         <div class="row">
           <button id="btnPickLogo">🖼️ เลือกโลโก้ (PNG/JPG)</button>
-          <span id="logoSel" style="color:#666; font-size:13px;"></span>
+          <button id="btnClearLogo">❌ ลบโลโก้</button>
+          <span id="logoSel" style="color:#666; font-size:13px;">(ไม่ได้เลือก)</span>
         </div>
 
         <div class="row">
