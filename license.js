@@ -287,7 +287,7 @@ function loadLicense() {
   return null;
 }
 
-// Check if app is licensed (trial or valid license)
+// Check if app is licensed (NO TRIAL - license required)
 async function checkLicense() {
   const licenseKey = loadLicense();
 
@@ -299,8 +299,11 @@ async function checkLicense() {
     }
   }
 
-  // No valid license, check trial
-  return checkTrial();
+  // No valid license - require license (no trial)
+  return {
+    valid: false,
+    error: 'กรุณากรอก License Key เพื่อใช้งานโปรแกรม'
+  };
 }
 
 module.exports = {
@@ -309,6 +312,5 @@ module.exports = {
   validateLicenseKey,
   saveLicense,
   loadLicense,
-  checkLicense,
-  checkTrial
+  checkLicense
 };
