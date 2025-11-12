@@ -204,7 +204,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   });
 
   // FFmpeg logs
-  window.api.onFFmpegLog((line) => {
+  window.api.onFfmpegLog((line) => {
     log.textContent += line;
     log.scrollTop = log.scrollHeight;
   });
