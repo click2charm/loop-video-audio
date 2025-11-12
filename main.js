@@ -23,94 +23,34 @@ const license = require('./license');
 const arch = os.arch(); // 'x64' or 'arm64'
 const platform = os.platform(); // 'darwin', 'win32', 'linux'
 
-// FFmpeg/FFprobe path detection with fallback for packaged apps
+// In packaged app, ffmpeg/ffprobe are in Resources folder
+// In development, use the npm packages
 let ffmpegPath, ffprobePath;
 
-// Try auto-detection first
-try {
-  const autoFfmpeg = require('@ffmpeg-installer/ffmpeg').path;
-  const autoFfprobe = require('@ffprobe-installer/ffprobe').path;
+if (app.isPackaged) {
+  const resourcesPath = process.resourcesPath;
 
-  // Validate that paths exist and are files (not directories)
-  const fs = require('fs');
-  const ffmpegValid = fs.existsSync(autoFfmpeg) && fs.statSync(autoFfmpeg).isFile();
-  const ffprobeValid = fs.existsSync(autoFfprobe) && fs.statSync(autoFfprobe).isFile();
-
-  if (ffmpegValid && ffprobeValid) {
-    ffmpegPath = autoFfmpeg;
-    ffprobePath = autoFfprobe;
-    console.log('[FFmpeg] Auto-detected:', { ffmpegPath, ffprobePath });
+  if (platform === 'win32') {
+    // Windows: use win32-x64 binaries with .exe extension
+    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg.exe');
+    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe.exe');
+  } else if (platform === 'darwin') {
+    // macOS: use darwin-x64 or darwin-arm64
+    const ffmpegFolder = arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg';
+    const ffprobeFolder = arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe';
+    ffmpegPath = path.join(resourcesPath, ffmpegFolder, 'ffmpeg');
+    ffprobePath = path.join(resourcesPath, ffprobeFolder, 'ffprobe');
   } else {
-    throw new Error('Auto-detected paths are not valid files');
+    // Linux or other
+    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg');
+    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe');
   }
-} catch (err) {
-  console.log('[FFmpeg] Auto-detection failed, using fallback:', err.message);
-
-  // Fallback: Use hard-coded paths for packaged apps
-  if (app.isPackaged) {
-    const resourcesPath = process.resourcesPath;
-
-    if (platform === 'darwin') {
-      // Mac: Check both app.asar.unpacked and Resources paths
-      const asarUnpackedBase = path.join(path.dirname(process.resourcesPath), 'app.asar.unpacked', 'node_modules');
-      const possiblePaths = [
-        // Try asar.unpacked first (preferred)
-        {
-          ffmpeg: path.join(asarUnpackedBase, '@ffmpeg-installer', `darwin-${arch}`, 'ffmpeg'),
-          ffprobe: path.join(asarUnpackedBase, '@ffprobe-installer', `darwin-${arch}`, 'ffprobe')
-        },
-        // Legacy extraResources paths
-        {
-          ffmpeg: path.join(resourcesPath, arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg', 'ffmpeg'),
-          ffprobe: path.join(resourcesPath, arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe', 'ffprobe')
-        }
-      ];
-
-      for (const paths of possiblePaths) {
-        const fs = require('fs');
-        if (fs.existsSync(paths.ffmpeg) && fs.existsSync(paths.ffprobe)) {
-          ffmpegPath = paths.ffmpeg;
-          ffprobePath = paths.ffprobe;
-          console.log('[FFmpeg] Using packaged paths (Mac):', { ffmpegPath, ffprobePath });
-          break;
-        }
-      }
-    } else if (platform === 'win32') {
-      // Windows
-      const asarUnpackedBase = path.join(path.dirname(process.resourcesPath), 'app.asar.unpacked', 'node_modules');
-      const possiblePaths = [
-        {
-          ffmpeg: path.join(asarUnpackedBase, '@ffmpeg-installer', 'win32-x64', 'ffmpeg.exe'),
-          ffprobe: path.join(asarUnpackedBase, '@ffprobe-installer', 'win32-x64', 'ffprobe.exe')
-        },
-        {
-          ffmpeg: path.join(resourcesPath, 'ffmpeg', 'ffmpeg.exe'),
-          ffprobe: path.join(resourcesPath, 'ffprobe', 'ffprobe.exe')
-        }
-      ];
-
-      for (const paths of possiblePaths) {
-        const fs = require('fs');
-        if (fs.existsSync(paths.ffmpeg) && fs.existsSync(paths.ffprobe)) {
-          ffmpegPath = paths.ffmpeg;
-          ffprobePath = paths.ffprobe;
-          console.log('[FFmpeg] Using packaged paths (Windows):', { ffmpegPath, ffprobePath });
-          break;
-        }
-      }
-    }
-  } else {
-    // Development: try system paths
-    ffmpegPath = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
-    ffprobePath = platform === 'win32' ? 'ffprobe.exe' : 'ffprobe';
-    console.log('[FFmpeg] Using system paths:', { ffmpegPath, ffprobePath });
-  }
+} else {
+  ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+  ffprobePath = require('@ffprobe-installer/ffprobe').path;
 }
 
-// Final validation
-if (!ffmpegPath || !ffprobePath) {
-  console.error('[FFmpeg] ERROR: Could not determine FFmpeg/FFprobe paths!');
-}
+console.log('[FFmpeg] Paths:', { platform, arch, ffmpegPath, ffprobePath });
 
 // ฟอนต์: แยกไทย/อังกฤษ
 // In packaged app, assets are in Resources folder
@@ -129,19 +69,6 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   win.loadFile('renderer.html');
-
-  // Send FFmpeg diagnostics to renderer after window loads
-  win.webContents.once('did-finish-load', () => {
-    const diagnostics = [
-      `[System] Platform: ${platform}, Arch: ${arch}`,
-      `[System] Packaged: ${app.isPackaged}`,
-      `[FFmpeg] Path: ${ffmpegPath || 'NOT FOUND'}`,
-      `[FFprobe] Path: ${ffprobePath || 'NOT FOUND'}`
-    ];
-    diagnostics.forEach(msg => {
-      win?.webContents.send('ffmpeg-log', msg + '\n');
-    });
-  });
 }
 app.whenReady().then(createWindow);
 
