@@ -56,10 +56,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Check license status (non-blocking)
   async function checkLicenseStatus() {
-    console.log('[Renderer] Checking license status...');
     try {
       const licenseStatus = await window.api.checkLicense();
-      console.log('[Renderer] License status:', licenseStatus);
 
       // Always allow use - just show status
       if (licenseStatus.isTrial && licenseStatus.isValid) {
@@ -96,19 +94,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   // License button - open dialog
   if (licenseButton) {
     licenseButton.addEventListener('click', () => {
-      console.log('[Renderer] Opening license dialog');
       licenseOverlay.style.display = 'flex';
-
-      // Show current status
-      checkLicenseStatus().then(status => {
-        if (status.isTrial && status.isValid) {
-          licenseStatusEl.innerHTML = `<p style="color:#4299e1;">ℹ️ ทดลองใช้งาน: เหลืออีก ${status.daysRemaining} วัน</p>`;
-        } else if (status.isTrial && !status.isValid) {
-          licenseStatusEl.innerHTML = `<p style="color:#f5576c; font-weight:600;">⚠️ ทดลองใช้งานหมดอายุแล้ว</p>`;
-        } else if (status.isLifetime) {
-          licenseStatusEl.innerHTML = `<p style="color:#48bb78; font-weight:600;">✅ License: ตลอดชีพ</p>`;
-        }
-      });
+      // Don't check status here - avoid race condition with activation
+      licenseStatusEl.innerHTML = '<p style="color:#666;">กรอก License Key เพื่อเปิดใช้งานแบบถาวร</p>';
     });
   }
 
@@ -126,11 +114,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     const errorEl = document.getElementById('licenseError');
     const activateBtn = document.getElementById('activateButton');
 
-    console.log('[Renderer] Attempting to activate license');
-
     if (!licenseKey) {
       errorEl.textContent = 'กรุณากรอก License Key';
-      console.error('[Renderer] Empty license key');
       return;
     }
 
@@ -139,15 +124,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     errorEl.textContent = '';
 
     try {
-      console.log('[Renderer] Calling activate-license IPC...');
       const result = await window.api.activateLicense(licenseKey);
-      console.log('[Renderer] Activation result:', result);
 
       if (result.valid) {
         licenseStatusEl.innerHTML = '<p style="color:#48bb78; font-weight:600;">✅ เปิดใช้งาน license สำเร็จ!</p>';
         appendLog('✅ เปิดใช้งาน license สำเร็จ: ตลอดชีพ (Lifetime)');
-
-        console.log('[Renderer] License activated successfully');
 
         setTimeout(() => {
           licenseOverlay.style.display = 'none';
