@@ -23,7 +23,6 @@
       "preload.js",
       "renderer.js",
       "renderer.html",
-      "license.js",
       "package.json"
     ],
     "extraResources": [

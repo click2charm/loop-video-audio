@@ -1,15 +1,12 @@
-name: Build and Release
+name: Build Electron App (macOS + Windows)
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., v1.1.0)'
+        description: 'Version number (e.g., 1.0.30)'
         required: true
-        default: 'v1.1.0'
+        default: '1.0.30'
 
 permissions:
   contents: write
@@ -20,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, windows-latest]
+        os: [macos-13, windows-latest]  # macos-13 = Intel runner for cross-compile
 
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -36,10 +33,29 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install dependencies with retry
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          shell: bash
+          command: |
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              npm install
+            fi
 
       # ---------- macOS ----------
+      - name: Fix Python on macOS
+        if: runner.os == 'macOS'
+        run: |
+          PY3=$(which python3)
+          sudo ln -sf "$PY3" /usr/local/bin/python || true
+          which python || true
+        shell: bash
+
       - name: Build macOS dmg (Intel x64)
         if: runner.os == 'macOS'
         run: |
@@ -66,53 +82,46 @@ jobs:
         shell: bash
 
       # ---------- Windows ----------
+      - name: Clean dist (win)
+        if: runner.os == 'Windows'
+        run: |
+          if (Test-Path dist) { Remove-Item dist -Recurse -Force }
+        shell: powershell
+
       - name: Build Windows exe (x64)
         if: runner.os == 'Windows'
         run: npm run dist:win
         shell: powershell
 
-      # ---------- Get Version ----------
-      - name: Get version
-        id: version
+      # ---------- Create Release and Upload Files Directly ----------
+      - name: Create tag if not exists
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
-      # ---------- Create Tag if Manual ----------
-      - name: Create tag for manual run
-        if: github.event_name == 'workflow_dispatch'
-        run: |
+          TAG="v${{ github.event.inputs.version }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.version.outputs.version }}" -m "Release ${{ steps.version.outputs.version }}" || true
-          git push origin "${{ steps.version.outputs.version }}" || true
+          git tag -a "$TAG" -m "Release $TAG" ${{ github.sha }} || true
+          git push origin "$TAG" || true
         shell: bash
 
-      # ---------- Collect Files ----------
       - name: Collect release files
         id: collect
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
-            FILES=$(find dist -type f \( -name "*.exe" -o -name "*.blockmap" -o -name "latest*.yml" \) -not -path "*/win-unpacked/*" | tr '\n' ',' | sed 's/,$//')
+            FILES=$(find dist -type f \( -name "*.exe" -o -name "*.blockmap" -o -name "latest*.yml" \) -not -path "*/win-unpacked/*" -not -path "*/node_modules/*" | tr '\n' ',' | sed 's/,$//')
           else
-            FILES=$(find dist -type f \( -name "*.dmg" -o -name "*.blockmap" -o -name "latest*.yml" \) -not -path "*/mac/*" | tr '\n' ',' | sed 's/,$//')
+            FILES=$(find dist -type f \( -name "*.dmg" -o -name "*.blockmap" -o -name "latest*.yml" \) -not -path "*/mac/*" -not -path "*/node_modules/*" | tr '\n' ',' | sed 's/,$//')
           fi
           echo "files=$FILES" >> $GITHUB_OUTPUT
           echo "Will upload: $FILES"
         shell: bash
 
-      # ---------- Upload to Release ----------
       - name: Upload to GitHub Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.version.outputs.version }}
+          tag: v${{ github.event.inputs.version }}
           commit: ${{ github.sha }}
-          name: Loop Video to Audio ${{ steps.version.outputs.version }}
+          name: "Loop Video to Audio v${{ github.event.inputs.version }}"
           allowUpdates: true
           replacesArtifacts: true
           removeArtifacts: false
