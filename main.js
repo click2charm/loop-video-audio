@@ -76,6 +76,11 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   win.loadFile('renderer.html');
+
+  // Auto-open DevTools for debugging
+  win.webContents.openDevTools();
+
+  console.log('[Main] Window created, DevTools opened');
 }
 app.whenReady().then(createWindow);
 

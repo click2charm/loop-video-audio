@@ -8,13 +8,6 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 const progressStatus = document.getElementById('progressStatus');
 
-// License elements
-const licenseOverlay = document.getElementById('licenseOverlay');
-const licenseStatusEl = document.getElementById('licenseStatus');
-const licenseKeyInput = document.getElementById('licenseKeyInput');
-const activateButton = document.getElementById('activateButton');
-const licenseError = document.getElementById('licenseError');
-
 function renderSel(){
   sel.textContent = JSON.stringify({ videoFiles, audioFiles, outputPath, logoPath }, null, 2);
 }
@@ -50,136 +43,221 @@ function updateProgress(data){
       progressBar.style.width = '0%';
       progressText.textContent = '0%';
       progressStatus.textContent = '';
-    }, 3000);
+    }, 2000);
   }
 }
 
-document.getElementById('btnVideo').onclick = async ()=>{
-  videoFiles = await window.api.pickVideo();
-  renderSel();
-};
-document.getElementById('btnAudios').onclick = async ()=>{
-  audioFiles = await window.api.pickAudios();
-  renderSel();
-};
-document.getElementById('btnOut').onclick = async ()=>{
-  outputPath = await window.api.pickOutput();
-  renderSel();
-};
-document.getElementById('btnPickLogo').onclick = async ()=>{
-  logoPath = await window.api.pickLogo();
-  logoSel.textContent = logoPath || '';
-  renderSel();
-};
-
-document.getElementById('btnRun').onclick = async ()=>{
-  if(!videoFiles.length || !outputPath || !audioFiles.length){
-    appendLog('กรุณาเลือกไฟล์ให้ครบ (วิดีโอ/รูปภาพ, เสียง, ผลลัพธ์)');
-    return;
-  }
-  const payload = {
-    videoFiles,
-    audioFiles,
-    outputPath,
-    outputFormat: document.getElementById('outputFormat').value || 'mp4',
-    videoQuality: document.getElementById('videoQuality').value || 'very-high',
-    centerMode: document.getElementById('centerMode').checked,
-    textBackground: document.getElementById('textBackground').checked,
-    titleText: document.getElementById('titleText').value || '',
-    titleSize: Number(document.getElementById('titleSize').value) || 64,
-    subtitleText: document.getElementById('subtitleText').value || '',
-    subtitleSize: Number(document.getElementById('subtitleSize').value) || 48,
-    taglineText: document.getElementById('taglineText').value || '',
-    taglineSize: Number(document.getElementById('taglineSize').value) || 36,
-    overlayText: document.getElementById('txtOverlay').value || '',
-    textPos: document.getElementById('textPos').value,
-    fontSize: Number(document.getElementById('fontSize').value) || 48,
-    logoPath: logoPath || '',
-    logoScale: Number(document.getElementById('logoScale').value) || 0.3,
-    logoOpacity: Number(document.getElementById('logoOpacity').value) || 0.9,
-    logoPos: document.getElementById('logoPos').value
-  };
-
-  appendLog('เริ่มประมวลผล...');
-  const res = await window.api.mergeAndLoop(payload);
-  if(res.ok) appendLog('สำเร็จ ✅');
-  else appendLog('ผิดพลาด ❌ ' + res.error);
-};
-
-window.api.onFfmpegLog(appendLog);
-window.api.onProgress(updateProgress);
-
-// License System - Check on page load
 window.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const licenseStatus = await window.api.checkLicense();
+  console.log('[Renderer] DOM loaded');
 
-    if (!licenseStatus.isValid) {
-      // Show license dialog - trial expired or no license
+  const licenseOverlay = document.getElementById('licenseOverlay');
+  const licenseStatusEl = document.getElementById('licenseStatus');
+  const licenseButton = document.getElementById('manageLicenseBtn');
+
+  // Check license status (non-blocking)
+  async function checkLicenseStatus() {
+    console.log('[Renderer] Checking license status...');
+    try {
+      const licenseStatus = await window.api.checkLicense();
+      console.log('[Renderer] License status:', licenseStatus);
+
+      // Always allow use - just show status
+      if (licenseStatus.isTrial && licenseStatus.isValid) {
+        // Trial mode - show days remaining
+        appendLog(`✅ ทดลองใช้งาน: เหลืออีก ${licenseStatus.daysRemaining} วัน (หมดอายุ: ${licenseStatus.expiryDate})`);
+        if (licenseButton) {
+          licenseButton.textContent = `🔑 License (Trial: ${licenseStatus.daysRemaining} วัน)`;
+        }
+      } else if (licenseStatus.isTrial && !licenseStatus.isValid) {
+        // Trial expired
+        appendLog(`⚠️ ทดลองใช้งานหมดอายุแล้ว - กรุณาเปิดใช้งาน License`);
+        if (licenseButton) {
+          licenseButton.textContent = '🔑 Trial หมดอายุ - เปิดใช้งาน';
+        }
+      } else if (licenseStatus.isLifetime) {
+        // Licensed
+        appendLog(`✅ License: ตลอดชีพ (Lifetime)`);
+        if (licenseButton) {
+          licenseButton.textContent = '🔑 License: Lifetime';
+        }
+      }
+
+      return licenseStatus;
+    } catch (err) {
+      console.error('[Renderer] Failed to check license:', err);
+      appendLog('⚠️ ไม่สามารถตรวจสอบ license ได้ - ใช้งานแบบ offline');
+      return { isValid: true, isTrial: true };
+    }
+  }
+
+  // Check license on start (non-blocking)
+  await checkLicenseStatus();
+
+  // License button - open dialog
+  if (licenseButton) {
+    licenseButton.addEventListener('click', () => {
+      console.log('[Renderer] Opening license dialog');
       licenseOverlay.style.display = 'flex';
 
-      if (licenseStatus.isTrial) {
-        licenseStatusEl.innerHTML = `<p style="color:#f5576c; font-weight:600;">⚠️ ทดลองใช้งานหมดอายุแล้ว</p>`;
-      } else {
-        licenseStatusEl.innerHTML = `<p style="color:#f5576c; font-weight:600;">⚠️ ไม่พบ License</p>`;
-      }
+      // Show current status
+      checkLicenseStatus().then(status => {
+        if (status.isTrial && status.isValid) {
+          licenseStatusEl.innerHTML = `<p style="color:#4299e1;">ℹ️ ทดลองใช้งาน: เหลืออีก ${status.daysRemaining} วัน</p>`;
+        } else if (status.isTrial && !status.isValid) {
+          licenseStatusEl.innerHTML = `<p style="color:#f5576c; font-weight:600;">⚠️ ทดลองใช้งานหมดอายุแล้ว</p>`;
+        } else if (status.isLifetime) {
+          licenseStatusEl.innerHTML = `<p style="color:#48bb78; font-weight:600;">✅ License: ตลอดชีพ</p>`;
+        }
+      });
+    });
+  }
 
-      // Disable all functionality
-      document.getElementById('btnVideo').disabled = true;
-      document.getElementById('btnAudios').disabled = true;
-      document.getElementById('btnOut').disabled = true;
-      document.getElementById('btnRun').disabled = true;
-      document.getElementById('btnPickLogo').disabled = true;
-    } else {
-      // License is valid - hide dialog, show status info
+  // Close license dialog
+  const closeButton = document.getElementById('closeLicenseDialog');
+  if (closeButton) {
+    closeButton.addEventListener('click', () => {
       licenseOverlay.style.display = 'none';
+    });
+  }
 
-      // Show license info in console or status
-      if (licenseStatus.isTrial) {
-        appendLog(`✅ ทดลองใช้งาน: เหลืออีก ${licenseStatus.daysRemaining} วัน (หมดอายุ: ${licenseStatus.expiryDate})`);
-      } else if (licenseStatus.isLifetime) {
-        appendLog(`✅ License: ตลอดชีพ (Lifetime)`);
+  // Activate license button
+  document.getElementById('activateButton').addEventListener('click', async () => {
+    const licenseKey = document.getElementById('licenseKeyInput').value.trim();
+    const errorEl = document.getElementById('licenseError');
+    const activateBtn = document.getElementById('activateButton');
+
+    console.log('[Renderer] Attempting to activate license');
+
+    if (!licenseKey) {
+      errorEl.textContent = 'กรุณากรอก License Key';
+      console.error('[Renderer] Empty license key');
+      return;
+    }
+
+    activateBtn.disabled = true;
+    activateBtn.textContent = 'กำลังเปิดใช้งาน...';
+    errorEl.textContent = '';
+
+    try {
+      console.log('[Renderer] Calling activate-license IPC...');
+      const result = await window.api.activateLicense(licenseKey);
+      console.log('[Renderer] Activation result:', result);
+
+      if (result.valid) {
+        licenseStatusEl.innerHTML = '<p style="color:#48bb78; font-weight:600;">✅ เปิดใช้งาน license สำเร็จ!</p>';
+        appendLog('✅ เปิดใช้งาน license สำเร็จ: ตลอดชีพ (Lifetime)');
+
+        console.log('[Renderer] License activated successfully');
+
+        setTimeout(() => {
+          licenseOverlay.style.display = 'none';
+          checkLicenseStatus(); // Refresh status
+        }, 2000);
       } else {
-        appendLog(`✅ License: หมดอายุ ${licenseStatus.expiryDate}`);
+        errorEl.textContent = result.error || 'ไม่สามารถเปิดใช้งาน license ได้';
+        console.error('[Renderer] Activation failed:', result.error);
       }
+    } catch (err) {
+      errorEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+      console.error('[Renderer] Activation error:', err);
+    } finally {
+      activateBtn.disabled = false;
+      activateBtn.textContent = 'เปิดใช้งาน License';
     }
-  } catch (err) {
-    console.error('License check error:', err);
-    appendLog('⚠️ เกิดข้อผิดพลาดในการตรวจสอบ License');
-  }
-});
+  });
 
-// License activation button handler
-activateButton.onclick = async () => {
-  const key = licenseKeyInput.value.trim();
+  // Video file picker
+  document.getElementById('btnVideo').addEventListener('click', async () => {
+    videoFiles = await window.api.pickVideo();
+    renderSel();
+    if(videoFiles.length) appendLog(`เลือกวิดีโอ/รูปภาพ: ${videoFiles.length} ไฟล์`);
+  });
 
-  if (!key) {
-    licenseError.textContent = '❌ กรุณากรอก License Key';
-    return;
-  }
+  // Audio file picker
+  document.getElementById('btnAudios').addEventListener('click', async () => {
+    audioFiles = await window.api.pickAudios();
+    renderSel();
+    if(audioFiles.length) appendLog(`เลือกเสียง: ${audioFiles.length} ไฟล์`);
+  });
 
-  licenseError.textContent = '⏳ กำลังตรวจสอบ...';
-  activateButton.disabled = true;
+  // Output file picker
+  document.getElementById('btnOut').addEventListener('click', async () => {
+    outputPath = await window.api.pickOutput();
+    renderSel();
+    if(outputPath) appendLog(`ที่เก็บผลลัพธ์: ${outputPath}`);
+  });
 
-  try {
-    const result = await window.api.activateLicense(key);
+  // Logo picker
+  document.getElementById('btnPickLogo').addEventListener('click', async () => {
+    logoPath = await window.api.pickLogo();
+    if(logoPath) {
+      logoSel.textContent = logoPath;
+      appendLog(`เลือกโลโก้: ${logoPath}`);
+    }
+  });
 
-    if (result.valid) {
-      licenseError.style.color = '#4CAF50';
-      licenseError.textContent = '✅ เปิดใช้งาน License สำเร็จ!';
+  // Clear logo button
+  document.getElementById('btnClearLogo').addEventListener('click', () => {
+    logoPath = null;
+    logoSel.textContent = '(ไม่ได้เลือก)';
+    appendLog('ลบโลโก้แล้ว');
+  });
 
-      setTimeout(() => {
-        licenseOverlay.style.display = 'none';
-        location.reload(); // Reload to enable all features
-      }, 1500);
+  // FFmpeg logs
+  window.api.onFFmpegLog((line) => {
+    log.textContent += line;
+    log.scrollTop = log.scrollHeight;
+  });
+
+  // Progress updates
+  window.api.onProgress(updateProgress);
+
+  // Run button
+  document.getElementById('btnRun').addEventListener('click', async () => {
+    const outputFormat = document.getElementById('outputFormat').value;
+    const videoQuality = document.getElementById('videoQuality').value;
+    const centerMode = document.getElementById('centerMode').checked;
+    const textBackground = document.getElementById('textBackground').checked;
+
+    const titleText = document.getElementById('titleText').value;
+    const titleSize = parseInt(document.getElementById('titleSize').value, 10);
+    const subtitleText = document.getElementById('subtitleText').value;
+    const subtitleSize = parseInt(document.getElementById('subtitleSize').value, 10);
+    const taglineText = document.getElementById('taglineText').value;
+    const taglineSize = parseInt(document.getElementById('taglineSize').value, 10);
+
+    const overlayText = document.getElementById('overlayText').value;
+    const textPos = document.getElementById('textPos').value;
+    const fontSize = parseInt(document.getElementById('fontSize').value, 10);
+
+    const logoScale = parseFloat(document.getElementById('logoScale').value);
+    const logoOpacity = parseFloat(document.getElementById('logoOpacity').value);
+    const logoPos = document.getElementById('logoPos').value;
+
+    if(!videoFiles.length || !audioFiles.length || !outputPath){
+      alert('กรุณาเลือกไฟล์วิดีโอ/รูปภาพ, เสียง, และที่เก็บผลลัพธ์');
+      return;
+    }
+
+    appendLog('เริ่มประมวลผล...');
+
+    const result = await window.api.mergeAndLoop({
+      videoFiles, audioFiles, outputPath,
+      outputFormat, videoQuality,
+      centerMode, textBackground,
+      titleText, titleSize,
+      subtitleText, subtitleSize,
+      taglineText, taglineSize,
+      overlayText, textPos, fontSize,
+      logoPath, logoScale, logoOpacity, logoPos
+    });
+
+    if(result.ok){
+      appendLog('✅ เสร็จสิ้น! ไฟล์: '+outputPath);
+      alert('เสร็จสิ้น!\n'+outputPath);
     } else {
-      licenseError.style.color = '#f5576c';
-      licenseError.textContent = '❌ ' + (result.error || 'License Key ไม่ถูกต้อง');
-      activateButton.disabled = false;
+      appendLog('❌ ผิดพลาด: '+result.error);
+      alert('ผิดพลาด:\n'+result.error);
     }
-  } catch (err) {
-    licenseError.style.color = '#f5576c';
-    licenseError.textContent = '❌ เกิดข้อผิดพลาด: ' + err.message;
-    activateButton.disabled = false;
-  }
-};
+  });
+});
