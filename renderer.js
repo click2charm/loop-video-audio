@@ -8,6 +8,13 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 const progressStatus = document.getElementById('progressStatus');
 
+// License elements
+const licenseOverlay = document.getElementById('licenseOverlay');
+const licenseStatusEl = document.getElementById('licenseStatus');
+const licenseKeyInput = document.getElementById('licenseKeyInput');
+const activateButton = document.getElementById('activateButton');
+const licenseError = document.getElementById('licenseError');
+
 function renderSel(){
   sel.textContent = JSON.stringify({ videoFiles, audioFiles, outputPath, logoPath }, null, 2);
 }
@@ -101,3 +108,78 @@ document.getElementById('btnRun').onclick = async ()=>{
 
 window.api.onFfmpegLog(appendLog);
 window.api.onProgress(updateProgress);
+
+// License System - Check on page load
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const licenseStatus = await window.api.checkLicense();
+
+    if (!licenseStatus.isValid) {
+      // Show license dialog - trial expired or no license
+      licenseOverlay.style.display = 'flex';
+
+      if (licenseStatus.isTrial) {
+        licenseStatusEl.innerHTML = `<p style="color:#f5576c; font-weight:600;">⚠️ ทดลองใช้งานหมดอายุแล้ว</p>`;
+      } else {
+        licenseStatusEl.innerHTML = `<p style="color:#f5576c; font-weight:600;">⚠️ ไม่พบ License</p>`;
+      }
+
+      // Disable all functionality
+      document.getElementById('btnVideo').disabled = true;
+      document.getElementById('btnAudios').disabled = true;
+      document.getElementById('btnOut').disabled = true;
+      document.getElementById('btnRun').disabled = true;
+      document.getElementById('btnPickLogo').disabled = true;
+    } else {
+      // License is valid - hide dialog, show status info
+      licenseOverlay.style.display = 'none';
+
+      // Show license info in console or status
+      if (licenseStatus.isTrial) {
+        appendLog(`✅ ทดลองใช้งาน: เหลืออีก ${licenseStatus.daysRemaining} วัน (หมดอายุ: ${licenseStatus.expiryDate})`);
+      } else if (licenseStatus.isLifetime) {
+        appendLog(`✅ License: ตลอดชีพ (Lifetime)`);
+      } else {
+        appendLog(`✅ License: หมดอายุ ${licenseStatus.expiryDate}`);
+      }
+    }
+  } catch (err) {
+    console.error('License check error:', err);
+    appendLog('⚠️ เกิดข้อผิดพลาดในการตรวจสอบ License');
+  }
+});
+
+// License activation button handler
+activateButton.onclick = async () => {
+  const key = licenseKeyInput.value.trim();
+
+  if (!key) {
+    licenseError.textContent = '❌ กรุณากรอก License Key';
+    return;
+  }
+
+  licenseError.textContent = '⏳ กำลังตรวจสอบ...';
+  activateButton.disabled = true;
+
+  try {
+    const result = await window.api.activateLicense(key);
+
+    if (result.valid) {
+      licenseError.style.color = '#4CAF50';
+      licenseError.textContent = '✅ เปิดใช้งาน License สำเร็จ!';
+
+      setTimeout(() => {
+        licenseOverlay.style.display = 'none';
+        location.reload(); // Reload to enable all features
+      }, 1500);
+    } else {
+      licenseError.style.color = '#f5576c';
+      licenseError.textContent = '❌ ' + (result.error || 'License Key ไม่ถูกต้อง');
+      activateButton.disabled = false;
+    }
+  } catch (err) {
+    licenseError.style.color = '#f5576c';
+    licenseError.textContent = '❌ เกิดข้อผิดพลาด: ' + err.message;
+    activateButton.disabled = false;
+  }
+};
