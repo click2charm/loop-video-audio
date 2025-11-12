@@ -292,16 +292,32 @@ async function validateLicenseKey(licenseKey) {
 function saveLicense(licenseKey) {
   try {
     const userDataPath = app.getPath('userData');
+    console.log('[License] Attempting to save license...');
+    console.log('[License] userData path:', userDataPath);
 
     // Ensure directory exists
     if (!fs.existsSync(userDataPath)) {
+      console.log('[License] Directory does not exist, creating...');
       fs.mkdirSync(userDataPath, { recursive: true });
-      console.log('[License] Created userData directory:', userDataPath);
+      console.log('[License] ✅ Created userData directory');
+    } else {
+      console.log('[License] Directory already exists');
+    }
+
+    // Check write permission
+    try {
+      fs.accessSync(userDataPath, fs.constants.W_OK);
+      console.log('[License] ✅ Directory is writable');
+    } catch (permErr) {
+      console.error('[License] ❌ Directory is not writable!', permErr.message);
+      throw new Error('Permission denied: Cannot write to userData directory');
     }
 
     const licensePath = path.join(userDataPath, '.license');
+    console.log('[License] Writing to:', licensePath);
+
     fs.writeFileSync(licensePath, licenseKey, 'utf8');
-    console.log('[License] ✅ Saved license to:', licensePath);
+    console.log('[License] ✅ File written successfully');
 
     // Verify it was saved
     if (fs.existsSync(licensePath)) {
@@ -310,13 +326,16 @@ function saveLicense(licenseKey) {
         console.log('[License] ✅ License file verified successfully');
       } else {
         console.error('[License] ❌ License file content mismatch!');
+        console.error('[License] Expected:', licenseKey);
+        console.error('[License] Got:', saved);
       }
     } else {
       console.error('[License] ❌ License file was not created!');
     }
   } catch (err) {
     console.error('[License] ❌ Failed to save license:', err.message);
-    console.error('[License] Error details:', err);
+    console.error('[License] Error stack:', err.stack);
+    throw err; // Re-throw to let caller know it failed
   }
 }
 

@@ -3,6 +3,29 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
+
+// Ensure userData directory exists on app start
+app.on('ready', () => {
+  try {
+    const userDataPath = app.getPath('userData');
+    console.log('[App] userData path:', userDataPath);
+
+    if (!fs.existsSync(userDataPath)) {
+      fs.mkdirSync(userDataPath, { recursive: true });
+      console.log('[App] ✅ Created userData directory');
+    } else {
+      console.log('[App] userData directory already exists');
+    }
+
+    // Verify permissions
+    fs.accessSync(userDataPath, fs.constants.W_OK);
+    console.log('[App] ✅ userData directory is writable');
+  } catch (err) {
+    console.error('[App] ❌ Failed to setup userData directory:', err.message);
+    console.error('[App] This will cause license/trial issues!');
+  }
+});
+
 const license = require('./license');
 
 // Determine architecture and paths
