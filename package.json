@@ -26,65 +26,27 @@
       "license.js",
       "package.json"
     ],
+    "asarUnpack": [
+      "**/ffmpeg*",
+      "**/ffprobe*"
+    ],
     "extraResources": [
       {
         "from": "assets/",
         "to": "assets",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/@ffmpeg-installer/darwin-x64",
-        "to": "ffmpeg",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/@ffmpeg-installer/darwin-arm64",
-        "to": "ffmpeg-arm64",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/@ffprobe-installer/darwin-x64",
-        "to": "ffprobe",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/@ffprobe-installer/darwin-arm64",
-        "to": "ffprobe-arm64",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/@ffmpeg-installer/win32-x64",
-        "to": "ffmpeg",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "node_modules/@ffprobe-installer/win32-x64",
-        "to": "ffprobe",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
       }
     ],
     "mac": {
       "category": "public.app-category.video",
-      "target": [
-        {
-          "target": "dmg"
-        }
-      ],
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
+      "target": [{"target": "dmg"}],
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "files": [
+        "node_modules/@ffmpeg-installer/ffmpeg/**/*",
+        "node_modules/@ffmpeg-installer/darwin-${arch}/**/*",
+        "node_modules/@ffprobe-installer/ffprobe/**/*",
+        "node_modules/@ffprobe-installer/darwin-${arch}/**/*"
+      ]
     },
     "dmg": {
       "contents": [
@@ -104,10 +66,14 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
+          "arch": ["x64"]
         }
+      ],
+      "files": [
+        "node_modules/@ffmpeg-installer/ffmpeg/**/*",
+        "node_modules/@ffmpeg-installer/win32-x64/**/*",
+        "node_modules/@ffprobe-installer/ffprobe/**/*",
+        "node_modules/@ffprobe-installer/win32-x64/**/*"
       ]
     },
     "nsis": {
