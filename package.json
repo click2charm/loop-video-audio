@@ -1,6 +1,6 @@
 {
   "name": "loop-video-to-audio",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "description": "Loop a short video to match audio length, merge to MP4, with text & logo overlay",
   "main": "main.js",
   "author": "Preecha",

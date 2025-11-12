@@ -78,13 +78,9 @@ function getTrialStartDate() {
     const userDataPath = app.getPath('userData');
     const trialPath = path.join(userDataPath, '.trial');
 
-    console.log('[License] Trial path:', trialPath);
-
     if (fs.existsSync(trialPath)) {
       const data = fs.readFileSync(trialPath, 'utf8');
-      const startTime = parseInt(data);
-      console.log('[License] Trial started:', new Date(startTime).toLocaleDateString());
-      return startTime;
+      return parseInt(data);
     }
   } catch (err) {
     console.error('[License] Failed to read trial file:', err.message);
@@ -94,40 +90,30 @@ function getTrialStartDate() {
   const startTime = Date.now();
   try {
     const userDataPath = app.getPath('userData');
-
-    // Ensure directory exists
     if (!fs.existsSync(userDataPath)) {
       fs.mkdirSync(userDataPath, { recursive: true });
-      console.log('[License] Created userData directory:', userDataPath);
     }
-
     const trialPath = path.join(userDataPath, '.trial');
     fs.writeFileSync(trialPath, String(startTime), 'utf8');
-    console.log('[License] Created trial file, start date:', new Date(startTime).toLocaleDateString());
   } catch (err) {
     console.error('[License] Failed to create trial file:', err.message);
-    console.error('[License] This might be a permission issue. Trial will start from app launch.');
   }
   return startTime;
 }
 
 // Check if trial is still valid
 function checkTrial() {
-  console.log('[License] Checking trial status...');
   const startTime = getTrialStartDate();
   const currentTime = Date.now();
   const daysElapsed = Math.floor((currentTime - startTime) / (1000 * 60 * 60 * 24));
   const daysRemaining = TRIAL_DAYS - daysElapsed;
 
-  const result = {
+  return {
     isTrial: true,
     isValid: daysRemaining > 0,
     daysRemaining: Math.max(0, daysRemaining),
     expiryDate: new Date(startTime + (TRIAL_DAYS * 24 * 60 * 60 * 1000)).toLocaleDateString('th-TH')
   };
-
-  console.log('[License] Trial status:', result.isValid ? 'Active' : 'Expired', `(${result.daysRemaining} days remaining)`);
-  return result;
 }
 
 // Validate license key format (signature check)
@@ -292,50 +278,26 @@ async function validateLicenseKey(licenseKey) {
 function saveLicense(licenseKey) {
   try {
     const userDataPath = app.getPath('userData');
-    console.log('[License] Attempting to save license...');
-    console.log('[License] userData path:', userDataPath);
-
-    // Ensure directory exists
     if (!fs.existsSync(userDataPath)) {
-      console.log('[License] Directory does not exist, creating...');
       fs.mkdirSync(userDataPath, { recursive: true });
-      console.log('[License] ✅ Created userData directory');
-    } else {
-      console.log('[License] Directory already exists');
     }
 
-    // Check write permission
     try {
       fs.accessSync(userDataPath, fs.constants.W_OK);
-      console.log('[License] ✅ Directory is writable');
     } catch (permErr) {
-      console.error('[License] ❌ Directory is not writable!', permErr.message);
       throw new Error('Permission denied: Cannot write to userData directory');
     }
 
     const licensePath = path.join(userDataPath, '.license');
-    console.log('[License] Writing to:', licensePath);
-
     fs.writeFileSync(licensePath, licenseKey, 'utf8');
-    console.log('[License] ✅ File written successfully');
 
     // Verify it was saved
-    if (fs.existsSync(licensePath)) {
-      const saved = fs.readFileSync(licensePath, 'utf8');
-      if (saved === licenseKey) {
-        console.log('[License] ✅ License file verified successfully');
-      } else {
-        console.error('[License] ❌ License file content mismatch!');
-        console.error('[License] Expected:', licenseKey);
-        console.error('[License] Got:', saved);
-      }
-    } else {
-      console.error('[License] ❌ License file was not created!');
+    if (!fs.existsSync(licensePath) || fs.readFileSync(licensePath, 'utf8') !== licenseKey) {
+      throw new Error('License file verification failed');
     }
   } catch (err) {
-    console.error('[License] ❌ Failed to save license:', err.message);
-    console.error('[License] Error stack:', err.stack);
-    throw err; // Re-throw to let caller know it failed
+    console.error('[License] Failed to save license:', err.message);
+    throw err;
   }
 }
 
@@ -345,11 +307,7 @@ function loadLicense() {
     const userDataPath = app.getPath('userData');
     const licensePath = path.join(userDataPath, '.license');
     if (fs.existsSync(licensePath)) {
-      const licenseKey = fs.readFileSync(licensePath, 'utf8');
-      console.log('[License] Loaded license from file');
-      return licenseKey;
-    } else {
-      console.log('[License] No license file found at:', licensePath);
+      return fs.readFileSync(licensePath, 'utf8');
     }
   } catch (err) {
     console.error('[License] Failed to load license:', err.message);
@@ -359,23 +317,16 @@ function loadLicense() {
 
 // Check if app is licensed (trial or valid license)
 async function checkLicense() {
-  console.log('[License] Checking license...');
   const licenseKey = loadLicense();
 
   if (licenseKey) {
-    console.log('[License] Found saved license, validating online...');
-    // Validate online
     const result = await validateLicenseKey(licenseKey);
     if (result.valid) {
-      console.log('[License] License is valid!');
       return result;
-    } else {
-      console.log('[License] License validation failed:', result.error);
     }
   }
 
   // No valid license, check trial
-  console.log('[License] No valid license, checking trial...');
   return checkTrial();
 }
 

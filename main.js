@@ -8,21 +8,12 @@ const os = require('os');
 app.on('ready', () => {
   try {
     const userDataPath = app.getPath('userData');
-    console.log('[App] userData path:', userDataPath);
-
     if (!fs.existsSync(userDataPath)) {
       fs.mkdirSync(userDataPath, { recursive: true });
-      console.log('[App] ✅ Created userData directory');
-    } else {
-      console.log('[App] userData directory already exists');
     }
-
-    // Verify permissions
     fs.accessSync(userDataPath, fs.constants.W_OK);
-    console.log('[App] ✅ userData directory is writable');
   } catch (err) {
-    console.error('[App] ❌ Failed to setup userData directory:', err.message);
-    console.error('[App] This will cause license/trial issues!');
+    console.error('[App] Failed to setup userData directory:', err.message);
   }
 });
 
@@ -76,11 +67,6 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false }
   });
   win.loadFile('renderer.html');
-
-  // Auto-open DevTools for debugging
-  win.webContents.openDevTools();
-
-  console.log('[Main] Window created, DevTools opened');
 }
 app.whenReady().then(createWindow);
 
