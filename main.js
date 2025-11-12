@@ -23,31 +23,24 @@ const license = require('./license');
 const arch = os.arch(); // 'x64' or 'arm64'
 const platform = os.platform(); // 'darwin', 'win32', 'linux'
 
-// In packaged app, ffmpeg/ffprobe are in Resources folder
-// In development, use the npm packages
+// Use auto-detection for both development and production
+// Electron-builder will bundle only the platform-specific binaries
 let ffmpegPath, ffprobePath;
 
-if (app.isPackaged) {
-  const resourcesPath = process.resourcesPath;
-
-  if (platform === 'win32') {
-    // Windows: use win32-x64 binaries with .exe extension
-    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg.exe');
-    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe.exe');
-  } else if (platform === 'darwin') {
-    // macOS: use darwin-x64 or darwin-arm64
-    const ffmpegFolder = arch === 'arm64' ? 'ffmpeg-arm64' : 'ffmpeg';
-    const ffprobeFolder = arch === 'arm64' ? 'ffprobe-arm64' : 'ffprobe';
-    ffmpegPath = path.join(resourcesPath, ffmpegFolder, 'ffmpeg');
-    ffprobePath = path.join(resourcesPath, ffprobeFolder, 'ffprobe');
-  } else {
-    // Linux or other
-    ffmpegPath = path.join(resourcesPath, 'ffmpeg', 'ffmpeg');
-    ffprobePath = path.join(resourcesPath, 'ffprobe', 'ffprobe');
-  }
-} else {
+try {
   ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
   ffprobePath = require('@ffprobe-installer/ffprobe').path;
+  console.log('[FFmpeg] Auto-detected paths:', { ffmpegPath, ffprobePath });
+} catch (err) {
+  console.error('[FFmpeg] Failed to detect FFmpeg/FFprobe:', err);
+  // Fallback: try common system paths
+  if (platform === 'win32') {
+    ffmpegPath = 'ffmpeg.exe';
+    ffprobePath = 'ffprobe.exe';
+  } else {
+    ffmpegPath = 'ffmpeg';
+    ffprobePath = 'ffprobe';
+  }
 }
 
 // ฟอนต์: แยกไทย/อังกฤษ
