@@ -18,6 +18,37 @@ function renderSel(){
   sel.textContent = JSON.stringify({ videoFiles, audioFiles, outputPath, logoPath }, null, 2);
 }
 
+// Natural sort function for audio files (sorts by numbers in filename)
+function naturalSortFiles(files) {
+  return files.slice().sort((a, b) => {
+    // Extract filename from full path
+    const nameA = a.split(/[/\\]/).pop();
+    const nameB = b.split(/[/\\]/).pop();
+
+    // Split into parts of numbers and non-numbers
+    const partsA = nameA.match(/(\d+|\D+)/g) || [];
+    const partsB = nameB.match(/(\d+|\D+)/g) || [];
+
+    for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+      const partA = partsA[i] || '';
+      const partB = partsB[i] || '';
+
+      // If both parts are numbers, compare numerically
+      const numA = parseInt(partA, 10);
+      const numB = parseInt(partB, 10);
+
+      if (!isNaN(numA) && !isNaN(numB)) {
+        if (numA !== numB) return numA - numB;
+      } else {
+        // Compare as strings
+        if (partA !== partB) return partA.localeCompare(partB);
+      }
+    }
+
+    return 0;
+  });
+}
+
 function appendLog(line){
   log.textContent += line + '\n';
   // Check if user is at bottom before auto-scrolling
@@ -202,9 +233,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
   // Audio file picker
   document.getElementById('btnAudios').addEventListener('click', async () => {
-    audioFiles = await window.api.pickAudios();
+    const selectedFiles = await window.api.pickAudios();
+    // Sort files naturally by numbers in filename
+    audioFiles = naturalSortFiles(selectedFiles);
     renderSel();
-    if(audioFiles.length) appendLog(`เลือกเสียง: ${audioFiles.length} ไฟล์`);
+    if(audioFiles.length) appendLog(`เลือกเสียง: ${audioFiles.length} ไฟล์ (เรียงตามตัวเลขอัตโนมัติ)`);
   });
 
   // Output file picker
